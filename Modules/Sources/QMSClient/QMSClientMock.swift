@@ -35,7 +35,7 @@ actor QMSClientMock {
     
     // MARK: - Interface
     
-    func sendQMSMessage(chatId: Int, message: String) async throws {
+    func sendQMSMessage(chatId: Int, message: String, attachments: [Int]) async throws {
         if retries != 0 {
             retries -= 1
             try? await Task.sleep(for: .seconds(1))
@@ -65,7 +65,16 @@ actor QMSClientMock {
             senderId: QMSClientMock.senderId,
             date: .now,
             text: message,
-            attachments: []
+            attachments: attachments.map { attachmentId in
+                Attachment(
+                    id: attachmentId,
+                    type: .file,
+                    name: "Attachment \(attachmentId)",
+                    size: 0,
+                    metadata: nil,
+                    downloadCount: nil
+                )
+            }
         )
         messages.append(qmsMessage)
         unreadCount += 1

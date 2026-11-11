@@ -21,7 +21,7 @@ public struct QMSClient: Sendable {
     public var createChat: @Sendable (_ opponentId: Int, _ title: String, _ message: String) async throws -> String
     public var deleteAllChats: @Sendable (_ userId: Int) async throws -> String
     public var deleteChat: @Sendable (_ chatId: Int) async throws -> String
-    public var sendMessage: @Sendable (_ chatId: Int, _ message: String) async throws -> Void
+    public var sendMessage: @Sendable (_ chatId: Int, _ message: String, _ attachments: [Int]) async throws -> Void
     public var deleteMessage: @Sendable (_ chatId: Int, _ messageId: Int, _ forAll: Bool) async throws -> String
     public var blacklist: @Sendable () async throws -> String
     public var addToBlacklist: @Sendable (_ id: Int, _ add: Bool) async throws -> String
@@ -69,8 +69,10 @@ extension QMSClient: DependencyKey {
                 return response
             },
             
-            sendMessage: { chatId, message in
-                let _ = try await api.send(QMSCommand.Message.send(message: message, dialogId: chatId, attaches: []))
+            sendMessage: { chatId, message, attachments in
+                let _ = try await api.send(
+                    QMSCommand.Message.send(message: message, dialogId: chatId, attaches: attachments)
+                )
             },
             
             deleteMessage: { chatId, messageId, forAll in
@@ -117,8 +119,8 @@ extension QMSClient: DependencyKey {
             deleteChat: { _ in
                 return ""
             },
-            sendMessage: { chatId, message in
-                return try await mock.sendQMSMessage(chatId: chatId, message: message)
+            sendMessage: { chatId, message, attachments in
+                return try await mock.sendQMSMessage(chatId: chatId, message: message, attachments: attachments)
             },
             deleteMessage: { _, _, _ in
                 return ""
@@ -146,8 +148,8 @@ extension QMSClient: DependencyKey {
             createChat: unimplemented(),
             deleteAllChats: unimplemented(),
             deleteChat: unimplemented(),
-            sendMessage: { chatId, message in
-                return try await mock.sendQMSMessage(chatId: chatId, message: message)
+            sendMessage: { chatId, message, attachments in
+                return try await mock.sendQMSMessage(chatId: chatId, message: message, attachments: attachments)
             },
             deleteMessage: unimplemented(),
             blacklist: unimplemented(),

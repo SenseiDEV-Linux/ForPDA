@@ -15,6 +15,7 @@ import AnalyticsClient
 import NotificationsClient
 import TCAExtensions
 import ExyteChat
+import UploadBoxFeature
 
 @Reducer
 public struct QMSFeature: Reducer, Sendable {
@@ -42,6 +43,7 @@ public struct QMSFeature: Reducer, Sendable {
         public let chatId: Int
         public var chat: QMSChat?
         public var messages: [Message] = []
+        var upload = UploadBoxFeature.State(type: .qms)
         
         var hasMoreOlderMessages = true
         var isLoadingMore = false
@@ -49,6 +51,18 @@ public struct QMSFeature: Reducer, Sendable {
         
         var draftText = ""
         var draftSnapshot = ""
+        
+        var uploadedAttachmentIDs: [Int] {
+            upload.files.compactMap { file in
+                guard !file.isUploading, file.uploadingError == nil else { return nil }
+                return file.serverId
+            }
+        }
+        
+        var canSendMessage: Bool {
+            !isSending && !upload.isAnyFileUploading &&
+            (!draftText.isEmpty || !uploadedAttachmentIDs.isEmpty)
+        }
         
         public var title: String {
             if let chat {
@@ -67,6 +81,7 @@ public struct QMSFeature: Reducer, Sendable {
     
     public enum Action: BindableAction, ViewAction {
         case binding(BindingAction<State>)
+        case upload(UploadBoxFeature.Action)
         
         case alert(PresentationAction<Alert>)
         public enum Alert {
@@ -76,6 +91,7 @@ public struct QMSFeature: Reducer, Sendable {
         case view(View)
         public enum View {
             case onAppear
+            case attachmentButtonTapped
             case sendMessageButtonTapped(DraftMessage)
             case loadMoreTriggered
             case urlTapped(URL)
@@ -85,6 +101,7 @@ public struct QMSFeature: Reducer, Sendable {
         public enum Internal {
             case loadChat
             case chatLoaded(Result<QMSChat, any Error>, LoadKind)
+            case messageSent([Int])
             case messageSendError(any Error)
         }
         
@@ -107,9 +124,13 @@ public struct QMSFeature: Reducer, Sendable {
     public var body: some Reducer<State, Action> {
         BindingReducer()
         
+        Scope(\.upload, action: \.upload) {
+            UploadBoxFeature()
+        }
+        
         Reduce<State, Action> { state, action in
             switch action {
-            case .alert, .delegate:
+            case .alert, .delegate, .upload:
                 return .none
                 
             case .view(.onAppear):
@@ -129,15 +150,24 @@ public struct QMSFeature: Reducer, Sendable {
                     }
                 ])
                 
+            case .view(.attachmentButtonTapped):
+                guard !state.isSending, !state.upload.isAnyFileUploading else { return .none }
+                return .send(.upload(.view(.selectFilesButtonTapped)))
+                
             case let .view(.sendMessageButtonTapped(draftMessage)):
-                guard !state.isSending, !draftMessage.text.isEmpty else { return .none }
+                let attachments = state.uploadedAttachmentIDs
+                guard !state.isSending,
+                      !state.upload.isAnyFileUploading,
+                      (!draftMessage.text.isEmpty || !attachments.isEmpty)
+                else { return .none }
                 
                 state.draftText = ""
                 state.draftSnapshot = draftMessage.text
                 state.isSending = true
                 
-                return .run { [chatId = state.chatId, message = draftMessage.text] send in
-                    try await qmsClient.sendMessage(chatId: chatId, message: message)
+                return .run { [chatId = state.chatId, message = draftMessage.text, attachments] send in
+                    try await qmsClient.sendMessage(chatId: chatId, message: message, attachments: attachments)
+                    await send(.internal(.messageSent(attachments)))
                 } catch: { error, send in
                     await send(.internal(.messageSendError(error)))
                 }
@@ -153,9 +183,20 @@ public struct QMSFeature: Reducer, Sendable {
                     await send(.internal(.chatLoaded(result, .older)))
                 }
                 
+            case let .internal(.messageSent(attachments)):
+                state.isSending = false
+                state.draftSnapshot = ""
+                let sentAttachmentIDs = Set(attachments)
+                state.upload.files.removeAll { file in
+                    guard let serverId = file.serverId else { return false }
+                    return sentAttachmentIDs.contains(serverId)
+                }
+                return .send(.internal(.loadChat))
+                
             case let .internal(.messageSendError(error)):
                 state.isSending = false
                 state.draftText = state.draftSnapshot
+                state.draftSnapshot = ""
                 state.alert = .somethingWentWrong
                 analyticsClient.capture(error)
                 return .none
@@ -191,8 +232,6 @@ public struct QMSFeature: Reducer, Sendable {
                 }
                 
             case let .internal(.chatLoaded(result, loadKind)):
-                state.draftSnapshot = ""
-                state.isSending = false
                 state.isLoadingMore = false
                 
                 switch result {

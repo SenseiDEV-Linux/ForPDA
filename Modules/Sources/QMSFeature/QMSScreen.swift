@@ -10,6 +10,7 @@ import ComposableArchitecture
 import SharedUI
 import SFSafeSymbols
 import ExyteChat
+import UploadBoxFeature
 
 @ViewAction(for: QMSFeature.self)
 public struct QMSScreen: View {
@@ -97,44 +98,63 @@ public struct QMSScreen: View {
     }
     
     private func InputView(text: Binding<String>) -> some View {
-        HStack {
-            #if DEBUG
-            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-                Button(String("+")) { text.wrappedValue += "text" }
-                    .buttonStyle(.borderedProminent)
-            }
-            #endif
+        VStack(spacing: 8) {
+            UploadBoxView(store: store.scope(\.upload, action: \.upload))
+                .disabled(store.isSending)
             
-            TextField(String(""), text: text, prompt: Text("qms.textfield.placeholder", bundle: .module))
-                .padding()
-                .background(Color(.Background.quaternary), in: .rect(cornerRadius: 16))
-            
-            Button {
-                if !text.wrappedValue.isEmpty {
+            HStack(spacing: 8) {
+                #if DEBUG
+                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                    Button(String("+")) { text.wrappedValue += "text" }
+                        .buttonStyle(.borderedProminent)
+                }
+                #endif
+                
+                Button {
+                    send(.attachmentButtonTapped)
+                } label: {
+                    Image(systemSymbol: .paperclip)
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(tintColor)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("qms.attachments.add", bundle: .module))
+                .disabled(store.isSending || store.upload.isAnyFileUploading)
+                
+                TextField(String(""), text: text, prompt: Text("qms.textfield.placeholder", bundle: .module))
+                    .padding()
+                    .background(Color(.Background.quaternary), in: .rect(cornerRadius: 16))
+                
+                Button {
                     send(.sendMessageButtonTapped(
                         DraftMessage(text: text.wrappedValue, medias: [], giphyMedia: nil, recording: nil, replyMessage: nil, createdAt: .now)
                     ))
-                }
-            } label: {
-                Circle()
-                    .tint(Color(.Theme.primary))
-                    .frame(width: 44, height: 44)
-                    .overlay {
-                        if store.isSending {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .tint(.white)
-                        } else {
-                            Image(systemSymbol: .arrowUp)
-                                .bold()
-                                .tint(.white)
+                } label: {
+                    Circle()
+                        .fill(Color(.Theme.primary))
+                        .frame(width: 44, height: 44)
+                        .overlay {
+                            if store.isSending {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .tint(.white)
+                            } else {
+                                Image(systemSymbol: .arrowUp)
+                                    .bold()
+                                    .foregroundStyle(.white)
+                            }
                         }
-                    }
+                        .opacity(store.canSendMessage ? 1 : 0.55)
+                }
+                .disabled(!store.canSendMessage)
+                .accessibilityLabel(Text("qms.message.send", bundle: .module))
             }
-            .disabled(store.isSending)
         }
         .padding()
         .animation(.default, value: store.isSending)
+        .animation(.default, value: store.canSendMessage)
         .animation(.default, value: text.wrappedValue)
         .bind(text, to: $store.draftText)
     }

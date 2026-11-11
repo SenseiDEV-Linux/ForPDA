@@ -36,6 +36,8 @@ public struct UploadBoxView: View {
                     switch store.type {
                     case .bbPanel:
                         FilesGrid()
+                    case .qms:
+                        QMSAttachments()
                     case .form:
                         if store.files.isEmpty {
                             FormUploadView()
@@ -86,6 +88,72 @@ public struct UploadBoxView: View {
                 send(.photosPickerPhotosSelected(photos))
             }
             .tint(tintColor)
+        }
+    }
+    
+    // MARK: - QMS Attachments
+    
+    @ViewBuilder
+    private func QMSAttachments() -> some View {
+        if store.files.isEmpty {
+            // Keep the file importer and photo picker modifiers in the view hierarchy
+            // while keeping the QMS composer compact when it has no attachments.
+            Color.clear
+                .frame(height: 0)
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(store.files, id: \.id) { file in
+                        HStack(spacing: 7) {
+                            if file.isUploading {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .frame(width: 16, height: 16)
+                            } else if file.uploadingError != nil {
+                                Button {
+                                    send(.fileWithErrorButtonTapped(file.id))
+                                } label: {
+                                    Image(systemSymbol: .exclamationmarkTriangle)
+                                        .foregroundStyle(.red)
+                                        .frame(width: 16, height: 16)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Image(systemSymbol: file.type == .file ? .doc : .photo)
+                                    .foregroundStyle(tintColor)
+                                    .frame(width: 16, height: 16)
+                            }
+                            
+                            Text(file.name)
+                                .font(.caption)
+                                .foregroundStyle(Color(.Labels.primary))
+                                .lineLimit(1)
+                                .frame(maxWidth: 150)
+                            
+                            Button {
+                                send(.removeFileButtonTapped(file))
+                            } label: {
+                                Image(systemSymbol: .xmark)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(Color(.Labels.teritary))
+                                    .frame(width: 20, height: 20)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.leading, 10)
+                        .padding(.trailing, 5)
+                        .padding(.vertical, 5)
+                        .background(backgroundColors.tertiary, in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(Color(.Separator.secondary), lineWidth: 1)
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+            .frame(height: 36)
+            .animation(.default, value: store.files)
         }
     }
     

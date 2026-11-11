@@ -65,7 +65,7 @@ public struct UploadBoxFeature: Reducer, Sendable {
         public var files: [UploadBoxFile]
         
         var uploadQueue: [UploadBoxFile.FileSource] = []
-        var isAnyFileUploading = false
+        public var isAnyFileUploading = false
         
         public var filesCount: Int {
             return files.count
@@ -336,6 +336,7 @@ public struct UploadBoxFeature: Reducer, Sendable {
                 
             case let .internal(.uploadFile(file, url)):
                 state.isAnyFileUploading = true
+                let isQms = state.type == .qms
                 
                 return .run(priority: .userInitiated, name: file.name) { send in
                     if file.type == .file {
@@ -358,7 +359,11 @@ public struct UploadBoxFeature: Reducer, Sendable {
                         return
                     }
                     
-                    let request = UploadRequest(fileName: file.name, fileData: data, isQms: false)
+                    let request = UploadRequest(
+                        fileName: file.name,
+                        fileData: data,
+                        isQms: isQms
+                    )
                     
                     await send(.delegate(.someFileUploading))
                     

@@ -528,6 +528,7 @@ let project = Project(
                     .Internal.QMSClient,
                     .Internal.SharedUI,
                     .Internal.TCAExtensions,
+                    .Internal.UploadBoxFeature,
                     .SPM.ExyteChat,
                     .SPM.NukeUI,
                     .SPM.SFSafeSymbols,

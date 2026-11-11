@@ -17,6 +17,38 @@
         }
       }
     },
+    "qms.attachments.add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attach file or image"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прикрепить файл или изображение"
+          }
+        }
+      }
+    },
+    "qms.message.send" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send message"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить сообщение"
+          }
+        }
+      }
+    },
     "qms.textfield.placeholder" : {
       "localizations" : {
         "en" : {
