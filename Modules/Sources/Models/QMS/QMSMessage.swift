@@ -15,18 +15,15 @@ public struct QMSMessage: Sendable, Codable, Hashable, Identifiable {
     public let attachments: [Attachment]
     
     public var processedText: String {
-        if attachments.isEmpty {
-            return text
-        } else {
-            var attachmentsText = ""
-            for (index, attachment) in attachments.enumerated() {
-                attachmentsText.append("[attachment=\(attachment.name),\(attachment.id)]")
-                if index != attachments.count - 1 {
-                    attachmentsText.append("\n\n")
-                }
-            }
-            return attachmentsText + (text.isEmpty ? "" : "\n\n\(text)")
+        let textAttachments = attachments.filter {
+            $0.type == .file || $0.metadata == nil
         }
+        guard !textAttachments.isEmpty else { return text }
+        
+        let attachmentsText = textAttachments
+            .map { "[attachment=\($0.name),\($0.id),\($0.size)]" }
+            .joined(separator: "\n\n")
+        return attachmentsText + (text.isEmpty ? "" : "\n\n\(text)")
     }
     
     public init(

@@ -370,13 +370,26 @@ public struct QMSFeature: Reducer, Sendable {
                 avatarURL: isCurrentUser ? nil : chat.avatarUrl ?? Links.defaultQMSAvatar,
                 isCurrentUser: isCurrentUser
             )
+            let imageAttachments = remoteMessage.attachments.compactMap { attachment -> ExyteChat.Attachment? in
+                guard attachment.type == .image, let metadata = attachment.metadata else { return nil }
+                let cacheKey = "qms-\(remoteMessage.id)-\(attachment.id)"
+                return ExyteChat.Attachment(
+                    id: cacheKey,
+                    thumbnail: metadata.url,
+                    full: metadata.fullUrl ?? metadata.url,
+                    type: ExyteChat.AttachmentType.image,
+                    thumbnailCacheKey: cacheKey,
+                    fullCacheKey: cacheKey
+                )
+            }
             
             return Message(
                 id: String(remoteMessage.id),
                 user: user,
                 status: .none,
                 createdAt: remoteMessage.date,
-                text: remoteMessage.processedText
+                text: remoteMessage.processedText,
+                attachments: imageAttachments
             )
         }
         
