@@ -5,6 +5,7 @@
 //  Created by Xialtal on 2.01.26.
 //
 
+import Foundation
 import SwiftUI
 import ComposableArchitecture
 import APIClient
@@ -257,6 +258,10 @@ public struct UploadBoxFeature: Reducer, Sendable {
                 state.destination = .alert(.fileImportFailed)
                 
             case let .view(.fileUploadCanceled(id, reason)):
+                if let id, let index = state.files.firstIndex(where: { $0.id == id }) {
+                    state.files[index].isUploading = false
+                    state.files[index].uploadingError = reason
+                }
                 switch reason {
                 case .sizeTooBig:
                     state.destination = .alert(.criticalFileConfirmation(
@@ -339,22 +344,20 @@ public struct UploadBoxFeature: Reducer, Sendable {
                 let isQms = state.type == .qms
                 
                 return .run(priority: .userInitiated, name: file.name) { send in
-                    if file.type == .file {
-                        guard url.startAccessingSecurityScopedResource() else {
-                            await send(.view(.fileUploadCanceled(file.id, .noAccessToSSR)))
-                            await send(.internal(.startNextUpload))
-                            return
-                        }
-                    }
+                    let hasSecurityScope = file.type == .file && url.startAccessingSecurityScopedResource()
+                    let data = file.type == .file
+                        ? readCoordinatedFile(at: url)
+                        : try? Data(contentsOf: url)
                     
-                    let data = try? Data(contentsOf: url)
-                    
-                    if file.type == .file {
+                    if hasSecurityScope {
                         url.stopAccessingSecurityScopedResource()
                     }
                     
-                    guard let data else {
-                        await send(.view(.fileUploadCanceled(file.id, .emptyFileData)))
+                    guard let data, !data.isEmpty else {
+                        let error: UploadBoxFile.UploadErrorType = file.type == .file && !hasSecurityScope
+                            ? .noAccessToSSR
+                            : .emptyFileData
+                        await send(.view(.fileUploadCanceled(file.id, error)))
                         await send(.internal(.startNextUpload))
                         return
                     }
@@ -495,6 +498,16 @@ extension AlertState where Action == UploadBoxFeature.Destination.Alert {
 // MARK: - Helpers
 
 private extension UploadBoxFeature {
+    func readCoordinatedFile(at url: URL) -> Data? {
+        var data: Data?
+        var coordinationError: NSError?
+        let coordinator = NSFileCoordinator(filePresenter: nil)
+        coordinator.coordinate(readingItemAt: url, options: [], error: &coordinationError) { coordinatedURL in
+            data = try? Data(contentsOf: coordinatedURL)
+        }
+        return coordinationError == nil ? data : nil
+    }
+    
     func fileExtensionAllowed(_ ext: String?, _ allowed: [String]) -> Bool {
         guard let fileExtension = ext else { return false }
         guard !allowed.isEmpty else { return true }
