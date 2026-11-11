@@ -16,6 +16,7 @@ import NotificationsClient
 import TCAExtensions
 import ExyteChat
 import UploadBoxFeature
+import BBPanelFeature
 
 @Reducer
 public struct QMSFeature: Reducer, Sendable {
@@ -44,6 +45,9 @@ public struct QMSFeature: Reducer, Sendable {
         public var chat: QMSChat?
         public var messages: [Message] = []
         var upload = UploadBoxFeature.State(type: .qms)
+        var bbPanel = BBPanelFeature.State(for: .qms)
+        var draftTextRange: NSRange?
+        var focus: Int?
         
         var hasMoreOlderMessages = true
         var isLoadingMore = false
@@ -82,6 +86,7 @@ public struct QMSFeature: Reducer, Sendable {
     public enum Action: BindableAction, ViewAction {
         case binding(BindingAction<State>)
         case upload(UploadBoxFeature.Action)
+        case bbPanel(BBPanelFeature.Action)
         
         case alert(PresentationAction<Alert>)
         public enum Alert {
@@ -128,6 +133,10 @@ public struct QMSFeature: Reducer, Sendable {
             UploadBoxFeature()
         }
         
+        Scope(\.bbPanel, action: \.bbPanel) {
+            BBPanelFeature()
+        }
+        
         Reduce<State, Action> { state, action in
             switch action {
             case .alert, .delegate, .upload:
@@ -154,6 +163,31 @@ public struct QMSFeature: Reducer, Sendable {
                 guard !state.isSending, !state.upload.isAnyFileUploading else { return .none }
                 return .send(.upload(.view(.selectFilesButtonTapped)))
                 
+            case let .bbPanel(.delegate(.tagTapped(tag))):
+                let selection = state.draftTextRange ?? NSRange(location: state.draftText.utf16.count, length: 0)
+                if let range = Range(selection, in: state.draftText) {
+                    if range.isEmpty {
+                        state.draftText.insert(contentsOf: "\(tag.0)\(tag.1)", at: range.lowerBound)
+                        state.draftTextRange = NSRange(location: selection.location + tag.0.utf16.count, length: 0)
+                    } else {
+                        state.draftText.insert(contentsOf: tag.1, at: range.upperBound)
+                        state.draftText.insert(contentsOf: tag.0, at: range.lowerBound)
+                        state.draftTextRange = NSRange(
+                            location: selection.location + tag.0.utf16.count,
+                            length: selection.length
+                        )
+                    }
+                } else {
+                    let location = state.draftText.utf16.count
+                    state.draftText.append("\(tag.0)\(tag.1)")
+                    state.draftTextRange = NSRange(location: location + tag.0.utf16.count, length: 0)
+                }
+                state.focus = state.chatId
+                return .none
+                
+            case .bbPanel:
+                return .none
+                
             case let .view(.sendMessageButtonTapped(draftMessage)):
                 let attachments = state.uploadedAttachmentIDs
                 guard !state.isSending,
@@ -162,6 +196,7 @@ public struct QMSFeature: Reducer, Sendable {
                 else { return .none }
                 
                 state.draftText = ""
+                state.draftTextRange = NSRange(location: 0, length: 0)
                 state.draftSnapshot = draftMessage.text
                 state.isSending = true
                 
@@ -186,6 +221,7 @@ public struct QMSFeature: Reducer, Sendable {
             case let .internal(.messageSent(attachments)):
                 state.isSending = false
                 state.draftSnapshot = ""
+                state.draftTextRange = NSRange(location: 0, length: 0)
                 let sentAttachmentIDs = Set(attachments)
                 state.upload.files.removeAll { file in
                     guard let serverId = file.serverId else { return false }
@@ -196,6 +232,7 @@ public struct QMSFeature: Reducer, Sendable {
             case let .internal(.messageSendError(error)):
                 state.isSending = false
                 state.draftText = state.draftSnapshot
+                state.draftTextRange = NSRange(location: state.draftText.utf16.count, length: 0)
                 state.draftSnapshot = ""
                 state.alert = .somethingWentWrong
                 analyticsClient.capture(error)

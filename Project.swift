@@ -522,6 +522,7 @@ let project = Project(
                     .Internal.APIClient,
                     .Internal.AnalyticsClient,
                     .Internal.BBBuilder,
+                    .Internal.BBPanelFeature,
                     .Internal.Models,
                     .Internal.NotificationsClient,
                     .Internal.PersistenceKeys,

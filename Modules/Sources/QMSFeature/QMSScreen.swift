@@ -11,6 +11,7 @@ import SharedUI
 import SFSafeSymbols
 import ExyteChat
 import UploadBoxFeature
+import BBPanelFeature
 
 @ViewAction(for: QMSFeature.self)
 public struct QMSScreen: View {
@@ -20,6 +21,7 @@ public struct QMSScreen: View {
     @Perception.Bindable public var store: StoreOf<QMSFeature>
     @Environment(\.tintColor) private var tintColor
     @Environment(\.backgroundColors) private var backgroundColors
+    @FocusState private var focusedInput: Int?
     
     // MARK: - Init
     
@@ -102,7 +104,7 @@ public struct QMSScreen: View {
             UploadBoxView(store: store.scope(\.upload, action: \.upload))
                 .disabled(store.isSending)
             
-            HStack(spacing: 8) {
+            HStack(alignment: .bottom, spacing: 8) {
                 #if DEBUG
                 if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
                     Button(String("+")) { text.wrappedValue += "text" }
@@ -123,9 +125,21 @@ public struct QMSScreen: View {
                 .accessibilityLabel(Text("qms.attachments.add", bundle: .module))
                 .disabled(store.isSending || store.upload.isAnyFileUploading)
                 
-                TextField(String(""), text: text, prompt: Text("qms.textfield.placeholder", bundle: .module))
-                    .padding()
-                    .background(Color(.Background.quaternary), in: .rect(cornerRadius: 16))
+                Field(
+                    content: text,
+                    placeholder: LocalizedStringResource("qms.textfield.placeholder", bundle: .module),
+                    focusEqual: store.chatId,
+                    focus: $focusedInput,
+                    minHeight: 96,
+                    selection: $store.draftTextRange,
+                    bbPanel: {
+                        BBPanelView(store: store.scope(\.bbPanel, action: \.bbPanel))
+                            .onTapGesture {
+                                focusedInput = store.chatId
+                            }
+                    }
+                )
+                .frame(minWidth: 0)
                 
                 Button {
                     send(.sendMessageButtonTapped(
@@ -156,6 +170,7 @@ public struct QMSScreen: View {
         .animation(.default, value: store.isSending)
         .animation(.default, value: store.canSendMessage)
         .animation(.default, value: text.wrappedValue)
+        .bind($focusedInput, to: $store.focus)
         .bind(text, to: $store.draftText)
     }
 }
