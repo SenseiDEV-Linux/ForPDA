@@ -139,6 +139,7 @@ public struct QMSScreen: View {
                             }
                     }
                 )
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(minWidth: 0)
                 
                 Button {
