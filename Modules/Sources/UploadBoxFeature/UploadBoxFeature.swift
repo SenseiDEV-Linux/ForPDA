@@ -373,6 +373,13 @@ public struct UploadBoxFeature: Reducer, Sendable {
                     for try await status in await apiClient.upload(request) {
                         await send(.internal(.updateFileUploadStatus(file.id, status)))
                     }
+                } catch: { error, send in
+                    let nsError = error as NSError
+                    guard !(error is CancellationError),
+                          !(nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled)
+                    else { return }
+                    await send(.view(.fileUploadCanceled(file.id, .other(nsError))))
+                    await send(.internal(.startNextUpload))
                 }
                 .cancellable(id: CancelID.uploading)
                 

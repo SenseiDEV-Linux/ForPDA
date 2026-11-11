@@ -373,13 +373,18 @@ public struct QMSFeature: Reducer, Sendable {
             let imageAttachments = remoteMessage.attachments.compactMap { attachment -> ExyteChat.Attachment? in
                 guard attachment.type == .image, let metadata = attachment.metadata else { return nil }
                 let cacheKey = "qms-\(remoteMessage.id)-\(attachment.id)"
+                var downloadComponents = URLComponents()
+                downloadComponents.scheme = "https"
+                downloadComponents.host = "4pda.to"
+                downloadComponents.path = "/forum/dl/post/\(attachment.id)/\(attachment.name)"
+                let originalImageURL = downloadComponents.url ?? metadata.url
                 return ExyteChat.Attachment(
                     id: cacheKey,
                     thumbnail: metadata.url,
-                    full: metadata.fullUrl ?? metadata.url,
+                    full: metadata.fullUrl ?? originalImageURL,
                     type: ExyteChat.AttachmentType.image,
-                    thumbnailCacheKey: cacheKey,
-                    fullCacheKey: cacheKey
+                    thumbnailCacheKey: "\(cacheKey)-thumbnail",
+                    fullCacheKey: "\(cacheKey)-full"
                 )
             }
             
