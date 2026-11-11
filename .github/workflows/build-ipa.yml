@@ -1,0 +1,145 @@
+name: Build IPA (unsigned)
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Лейбл macOS-раннера"
+        type: choice
+        default: xcode-27
+        options:
+          - xcode-27
+          - macos-26
+          - macos-15
+      branch:
+        description: "Ветка репозитория"
+        default: develop
+
+concurrency:
+  group: forpda-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TUIST_VERSION: "4.212.0"
+  TUIST_SHA256: "b79c8f620a7b2c09cef6767553842388a92b98e1aad672bedbf96a48475691f7"
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner || 'xcode-27' }}
+    timeout-minutes: 180
+    steps:
+      - name: Диагностика раннера
+        run: |
+          sw_vers
+          echo "--- доступные Xcode ---"
+          ls /Applications | grep -i xcode || true
+          echo "--- выбранный Xcode ---"
+          xcodebuild -version
+          df -h /
+
+      - uses: actions/checkout@v4
+        with:
+          repository: SenseiDEV-Linux/ForPDA
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+
+      - name: Выбрать самый новый Xcode
+        run: |
+          NEWEST=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$NEWEST" ]; then
+            echo "Выбираю $NEWEST"
+            sudo xcode-select -s "$NEWEST"
+          fi
+          xcodebuild -version
+
+      - name: Освободить место на диске
+        run: |
+          sudo rm -rf /Applications/Xcode*.app/Contents/Developer/Platforms/AppleTVOS.platform || true
+          sudo rm -rf /Applications/Xcode*.app/Contents/Developer/Platforms/WatchOS.platform || true
+          sudo rm -rf /Applications/Xcode*.app/Contents/Developer/Platforms/AppleVisionOS.platform || true
+          sudo rm -rf ~/Library/Caches/Homebrew /Library/Caches/Homebrew || true
+          sudo rm -rf /Users/runner/Library/Developer/CoreSimulator/Caches/* || true
+          xcrun simctl delete unavailable 2>/dev/null || true
+          df -h /
+
+      # ---- ключевое исправление -------------------------------------------
+      - name: Установить Tuist ${{ env.TUIST_VERSION }}
+        run: |
+          set -euo pipefail
+          INSTALL_DIR="$HOME/tuist-cli"
+          mkdir -p "$INSTALL_DIR"
+          URL="https://github.com/tuist/tuist/releases/download/${TUIST_VERSION}/tuist.zip"
+          echo "Скачиваю $URL (официальный инсталлятор install.tuist.io отдаёт Cloudflare-челлендж)"
+          curl -fsSL --retry 3 --retry-delay 5 -o /tmp/tuist.zip "$URL"
+          echo "${TUIST_SHA256}  /tmp/tuist.zip" | shasum -a 256 -c -
+          unzip -oq /tmp/tuist.zip -d "$INSTALL_DIR"
+          chmod +x "$INSTALL_DIR/tuist"
+          xattr -dr com.apple.quarantine "$INSTALL_DIR" 2>/dev/null || true
+          echo "$INSTALL_DIR" >> $GITHUB_PATH
+          "$INSTALL_DIR/tuist" version
+
+      - name: Номер и версия сборки
+        run: |
+          BUILD_NUMBER=$(git rev-list --all --count)
+          /usr/bin/sed -i '' -E "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = ${BUILD_NUMBER}/" Configs/App.xcconfig
+          VERSION=$(grep -E '^MARKETING_VERSION' Configs/App.xcconfig | awk -F'= *' '{print $2}' | tr -d '[:space:]')
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Собираю $VERSION ($BUILD_NUMBER)"
+
+      - name: Кэш SPM-зависимостей
+        uses: actions/cache@v4
+        with:
+          path: |
+            Tuist/.build
+            Tuist/.build-\(cache\)
+            ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ hashFiles('Tuist/Package.resolved') }}
+          restore-keys: spm-
+
+      - name: Tuist install (с ретраями)
+        run: |
+          for i in 1 2 3; do
+            echo "--- попытка $i ---"
+            if tuist install; then exit 0; fi
+            sleep 20
+          done
+          echo "tuist install не удался после 3 попыток"
+          exit 1
+
+      - name: Tuist generate
+        run: TUIST_LINKING=static tuist generate --cache-profile none --no-open
+        env:
+          # без аккаунта Tuist — чтобы не пытался тянуть удалённый кэш
+          TUIST_CONFIG_CACHE_PROFILE: none
+
+      - name: Archive (без подписи)
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -workspace ForPDA.xcworkspace -scheme ForPDA \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/ForPDA.xcarchive \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            -jobs 3 \
+            2>&1 | tail -300
+
+      - name: Упаковать в .ipa
+        run: |
+          APP=build/ForPDA.xcarchive/Products/Applications/ForPDA.app
+          ls "$APP" | head -30
+          echo "--- расширения ---"
+          ls "$APP/PlugIns" || echo "PlugIns отсутствует"
+          mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          cd out && zip -qry "ForPDA_${VERSION}_${BUILD_NUMBER}_unsigned.ipa" Payload
+          ls -lh *.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forpda-unsigned-ipa
+          path: out/*.ipa
+          if-no-files-found: error
+          retention-days: 14
