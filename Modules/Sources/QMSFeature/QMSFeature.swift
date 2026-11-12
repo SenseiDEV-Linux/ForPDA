@@ -330,10 +330,11 @@ public struct QMSFeature: Reducer, Sendable {
                     },
                     .run { [ids = fullImageIDsToResolve] send in
                         @Dependency(\.apiClient) var apiClient
+                        let getAttachment = apiClient.getAttachment
                         await withTaskGroup(of: (Int, Result<URL, any Error>).self) { group in
                             for id in ids {
                                 group.addTask {
-                                    let result = await Result { try await apiClient.getAttachment(id) }
+                                    let result = await Result { try await getAttachment(id) }
                                     return (id, result)
                                 }
                             }
