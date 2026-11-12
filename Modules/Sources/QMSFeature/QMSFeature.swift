@@ -44,6 +44,8 @@ public struct QMSFeature: Reducer, Sendable {
         public let chatId: Int
         public var chat: QMSChat?
         public var messages: [Message] = []
+        var fullImageURLs: [Int: URL] = [:]
+        var requestedFullImageURLIDs: Set<Int> = []
         var upload = UploadBoxFeature.State(type: .qms)
         var bbPanel = BBPanelFeature.State(for: .qms)
         var draftTextRange: NSRange?
@@ -106,6 +108,7 @@ public struct QMSFeature: Reducer, Sendable {
         public enum Internal {
             case loadChat
             case chatLoaded(Result<QMSChat, any Error>, LoadKind)
+            case fullImageURLLoaded(Int, Result<URL, any Error>)
             case messageSent([Int])
             case messageSendError(any Error)
         }
@@ -270,6 +273,7 @@ public struct QMSFeature: Reducer, Sendable {
                 
             case let .internal(.chatLoaded(result, loadKind)):
                 state.isLoadingMore = false
+                var fullImageIDsToResolve = Set<Int>()
                 
                 switch result {
                 case let .success(chat):
@@ -283,10 +287,24 @@ public struct QMSFeature: Reducer, Sendable {
                     var mergedChat = chat
                     mergedChat.messages = mergeResult.messages
                     
+                    fullImageIDsToResolve = Set(mergeResult.messages.flatMap { message in
+                        message.attachments.compactMap { attachment -> Int? in
+                            guard attachment.type == .image,
+                                  attachment.metadata != nil,
+                                  attachment.metadata?.fullUrl == nil,
+                                  state.fullImageURLs[attachment.id] == nil,
+                                  !state.requestedFullImageURLIDs.contains(attachment.id)
+                            else { return nil }
+                            return attachment.id
+                        }
+                    })
+                    state.requestedFullImageURLIDs.formUnion(fullImageIDsToResolve)
+
                     state.messages = makeLocalMessages(
                         from: mergeResult.messages,
                         chat: mergedChat,
-                        currentUserId: state.userSession!.userId
+                        currentUserId: state.userSession!.userId,
+                        fullImageURLs: state.fullImageURLs
                     )
                     state.chat = mergedChat
                     
@@ -304,11 +322,42 @@ public struct QMSFeature: Reducer, Sendable {
                 }
                 
                 analyticsClient.reportFullyDisplayed()
-                return .run { [userId = state.chat!.partnerId] send in
-                    let ids = (try? result.get().id).map { [$0] } ?? []
-                    await notificationsClient.removeNotifications(ids: ids)
-                    await send(.delegate(.fullyRead(userId)))
+                return .merge([
+                    .run { [userId = state.chat!.partnerId] send in
+                        let ids = (try? result.get().id).map { [$0] } ?? []
+                        await notificationsClient.removeNotifications(ids: ids)
+                        await send(.delegate(.fullyRead(userId)))
+                    },
+                    .run { [ids = fullImageIDsToResolve] send in
+                        @Dependency(\.apiClient) var apiClient
+                        await withTaskGroup(of: (Int, Result<URL, any Error>).self) { group in
+                            for id in ids {
+                                group.addTask {
+                                    let result = await Result { try await apiClient.getAttachment(id) }
+                                    return (id, result)
+                                }
+                            }
+                            for await (id, result) in group {
+                                await send(.internal(.fullImageURLLoaded(id, result)))
+                            }
+                        }
+                    }
+                ])
+
+            case let .internal(.fullImageURLLoaded(id, result)):
+                state.requestedFullImageURLIDs.remove(id)
+                if case let .success(url) = result {
+                    state.fullImageURLs[id] = url
+                    if let chat = state.chat {
+                        state.messages = makeLocalMessages(
+                            from: chat.messages,
+                            chat: chat,
+                            currentUserId: state.userSession!.userId,
+                            fullImageURLs: state.fullImageURLs
+                        )
+                    }
                 }
+                return .none
                 
             case .binding:
                 return .none
@@ -360,7 +409,8 @@ public struct QMSFeature: Reducer, Sendable {
     private func makeLocalMessages(
         from remoteMessages: [QMSMessage],
         chat: QMSChat,
-        currentUserId: Int
+        currentUserId: Int,
+        fullImageURLs: [Int: URL]
     ) -> [Message] {
         var localMessages = remoteMessages.map { remoteMessage in
             let isCurrentUser = currentUserId == remoteMessage.senderId
@@ -373,18 +423,14 @@ public struct QMSFeature: Reducer, Sendable {
             let imageAttachments = remoteMessage.attachments.compactMap { attachment -> ExyteChat.Attachment? in
                 guard attachment.type == .image, let metadata = attachment.metadata else { return nil }
                 let cacheKey = "qms-\(remoteMessage.id)-\(attachment.id)"
-                var downloadComponents = URLComponents()
-                downloadComponents.scheme = "https"
-                downloadComponents.host = "4pda.to"
-                downloadComponents.path = "/forum/dl/post/\(attachment.id)/\(attachment.name)"
-                let originalImageURL = downloadComponents.url ?? metadata.url
+                let fullImageURL = metadata.fullUrl ?? fullImageURLs[attachment.id] ?? metadata.url
                 return ExyteChat.Attachment(
                     id: cacheKey,
                     thumbnail: metadata.url,
-                    full: metadata.fullUrl ?? originalImageURL,
+                    full: fullImageURL,
                     type: ExyteChat.AttachmentType.image,
                     thumbnailCacheKey: "\(cacheKey)-thumbnail",
-                    fullCacheKey: "\(cacheKey)-full"
+                    fullCacheKey: "\(cacheKey)-full-\(fullImageURL.absoluteString.hashValue)"
                 )
             }
             
