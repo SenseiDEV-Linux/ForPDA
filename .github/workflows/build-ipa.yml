@@ -115,7 +115,9 @@ jobs:
 
       - name: Archive (без подписи)
         run: |
-          set -o pipefail
+          set -euo pipefail
+          mkdir -p build
+          set +e
           xcodebuild archive \
             -workspace ForPDA.xcworkspace -scheme ForPDA \
             -configuration Release \
@@ -124,7 +126,22 @@ jobs:
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             -jobs 3 \
-            2>&1 | tail -300
+            > build/xcodebuild-archive.log 2>&1
+          build_status=$?
+          set -e
+          echo "--- Xcode diagnostics (full log saved as artifact) ---"
+          grep -n -C 3 -E '(^|[[:space:]])(fatal )?error:|warning:|SwiftCompile.*failed|Command .*failed' build/xcodebuild-archive.log | tail -n 120 || true
+          echo "--- End of xcodebuild log ---"
+          tail -n 25 build/xcodebuild-archive.log
+          exit "$build_status"
+
+      - name: Upload full Xcode archive log
+        if: failure() && hashFiles('build/xcodebuild-archive.log') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-archive-log
+          path: build/xcodebuild-archive.log
+          retention-days: 7
 
       - name: Упаковать в .ipa
         run: |
