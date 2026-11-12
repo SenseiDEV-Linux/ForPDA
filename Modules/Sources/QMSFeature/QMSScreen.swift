@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 import ComposableArchitecture
 import SharedUI
 import SFSafeSymbols
@@ -36,7 +37,10 @@ public struct QMSScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
-                
+
+                QMSFileImporterHost(store: store.scope(\.upload, action: \.upload))
+                    .frame(width: 0, height: 0)
+
                 if store.chat != nil {
                     ChatView(messages: store.messages) { message in
                         // send(.sendMessageButtonTapped(message))
@@ -101,8 +105,11 @@ public struct QMSScreen: View {
     
     private func InputView(text: Binding<String>) -> some View {
         VStack(spacing: 8) {
-            UploadBoxView(store: store.scope(\.upload, action: \.upload))
-                .disabled(store.isSending)
+            UploadBoxView(
+                store: store.scope(\.upload, action: \.upload),
+                usesExternalFileImporter: true
+            )
+            .disabled(store.isSending)
             
             HStack(alignment: .bottom, spacing: 8) {
                 #if DEBUG
@@ -173,6 +180,39 @@ public struct QMSScreen: View {
         .animation(.default, value: text.wrappedValue)
         .bind($focusedInput, to: $store.focus)
         .bind(text, to: $store.draftText)
+    }
+}
+
+private struct QMSFileImporterHost: View {
+    @Perception.Bindable var store: StoreOf<UploadBoxFeature>
+
+    init(store: StoreOf<UploadBoxFeature>) {
+        self.store = store
+    }
+
+    var body: some View {
+        Color.clear
+            .fileImporter(
+                isPresented: Binding($store.destination.fileImporter),
+                allowedContentTypes: [.item],
+                allowsMultipleSelection: true,
+                onCompletion: { result in
+                    switch result {
+                    case let .success(urls):
+                        guard !urls.isEmpty else {
+                            store.send(.view(.fileImporterURLsRecievingFailure))
+                            return
+                        }
+                        store.send(.view(.fileImporterURLsRecieved(urls)))
+                    case let .failure(error):
+                        if let error = error as? CocoaError, error.code == .userCancelled {
+                            // canceled by user
+                        } else {
+                            store.send(.view(.fileImporterURLsRecievingFailure))
+                        }
+                    }
+                }
+            )
     }
 }
 

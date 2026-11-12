@@ -16,6 +16,7 @@ public struct UploadBoxView: View {
     // MARK: - Properties
     
     @Perception.Bindable public var store: StoreOf<UploadBoxFeature>
+    private let usesExternalFileImporter: Bool
     @Environment(\.tintColor) private var tintColor
     @Environment(\.backgroundColors) private var backgroundColors
     
@@ -23,8 +24,9 @@ public struct UploadBoxView: View {
     
     // MARK: - Init
     
-    public init(store: StoreOf<UploadBoxFeature>) {
+    public init(store: StoreOf<UploadBoxFeature>, usesExternalFileImporter: Bool = false) {
         self.store = store
+        self.usesExternalFileImporter = usesExternalFileImporter
     }
     
     // MARK: - Body
@@ -55,7 +57,9 @@ public struct UploadBoxView: View {
                 )
             )
             .fileImporter(
-                isPresented: Binding($store.destination.fileImporter),
+                isPresented: usesExternalFileImporter
+                    ? .constant(false)
+                    : Binding($store.destination.fileImporter),
                 allowedContentTypes: [.item],
                 allowsMultipleSelection: true,
                 onCompletion: { result in
