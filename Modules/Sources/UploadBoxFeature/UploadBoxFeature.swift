@@ -247,10 +247,14 @@ public struct UploadBoxFeature: Reducer, Sendable {
                 }
                 
             case let .view(.fileImporterURLsRecieved(urls)):
+                // The system importer can complete before SwiftUI clears its presentation binding.
+                // Clear the presentation state here so the picker cannot remain/reopen.
+                state.destination = nil
                 if isPreview {
                     state.files.append(.mockFile)
                     return .send(.delegate(.fileHasBeenUploaded(0)))
                 }
+                guard !urls.isEmpty else { return .none }
                 state.uploadQueue.append(contentsOf: urls.map { .file(url: $0) })
                 return .send(.internal(.startNextUpload))
                 

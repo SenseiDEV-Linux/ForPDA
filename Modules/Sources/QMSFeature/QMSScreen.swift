@@ -39,7 +39,8 @@ public struct QMSScreen: View {
                     .ignoresSafeArea()
 
                 QMSFileImporterHost(store: store.scope(\.upload, action: \.upload))
-                    .frame(width: 0, height: 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .allowsHitTesting(false)
 
                 if store.chat != nil {
                     ChatView(messages: store.messages) { message in
