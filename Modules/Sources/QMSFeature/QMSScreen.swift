@@ -267,7 +267,8 @@ private final class QMSFilePickerPresenterController: UIViewController,
         didPresentPickerForCurrentRequest = true
         let picker = UIDocumentPickerViewController(
             forOpeningContentTypes: [.item],
-            asCopy: false
+            // QMS uploads file bytes; import a sandbox copy instead of opening the provider file in place.
+            asCopy: true
         )
         picker.allowsMultipleSelection = true
         picker.modalPresentationStyle = .fullScreen
