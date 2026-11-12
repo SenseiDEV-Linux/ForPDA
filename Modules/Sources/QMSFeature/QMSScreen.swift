@@ -39,6 +39,22 @@ public struct QMSScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
+                QMSFilePickerPresenter(
+                    isPresented: Binding($store.upload.destination.fileImporter).wrappedValue,
+                    onPick: { urls in
+                        if urls.isEmpty {
+                            store.send(.upload(.view(.fileImporterURLsRecievingFailure)))
+                        } else {
+                            store.send(.upload(.view(.fileImporterURLsRecieved(urls))))
+                        }
+                    },
+                    onCancel: {
+                        store.send(.upload(.destination(.dismiss)))
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+
                 if store.chat != nil {
                     ChatView(messages: store.messages) { message in
                         // send(.sendMessageButtonTapped(message))
@@ -94,19 +110,6 @@ public struct QMSScreen: View {
             }
             .navigationTitle(store.title)
             ._toolbarTitleDisplayMode(.inline)
-            .fullScreenCover(isPresented: Binding($store.upload.destination.fileImporter)) {
-                QMSDocumentPicker(
-                    isPresented: Binding($store.upload.destination.fileImporter),
-                    onPick: { urls in
-                        if urls.isEmpty {
-                            store.send(.upload(.view(.fileImporterURLsRecievingFailure)))
-                        } else {
-                            store.send(.upload(.view(.fileImporterURLsRecieved(urls))))
-                        }
-                    }
-                )
-                .ignoresSafeArea()
-            }
             .alert($store.scope(\.$alert, action: \.alert))
             .onAppear {
                 send(.onAppear)
@@ -194,52 +197,127 @@ public struct QMSScreen: View {
     }
 }
 
-private struct QMSDocumentPicker: UIViewControllerRepresentable {
-    @Binding var isPresented: Bool
+private struct QMSFilePickerPresenter: UIViewControllerRepresentable {
+    let isPresented: Bool
     let onPick: ([URL]) -> Void
+    let onCancel: () -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(isPresented: $isPresented, onPick: onPick)
+    func makeUIViewController(context: Context) -> QMSFilePickerPresenterController {
+        let controller = QMSFilePickerPresenterController()
+        controller.configure(isPresented: isPresented, onPick: onPick, onCancel: onCancel)
+        return controller
     }
 
-    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+    func updateUIViewController(
+        _ uiViewController: QMSFilePickerPresenterController,
+        context: Context
+    ) {
+        uiViewController.configure(isPresented: isPresented, onPick: onPick, onCancel: onCancel)
+    }
+}
+
+private final class QMSFilePickerPresenterController: UIViewController,
+    UIDocumentPickerDelegate,
+    UIAdaptivePresentationControllerDelegate
+{
+    private var shouldPresentPicker = false
+    private var didPresentPickerForCurrentRequest = false
+    private var documentPicker: UIDocumentPickerViewController?
+    private var onPick: ([URL]) -> Void = { _ in }
+    private var onCancel: () -> Void = {}
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+        view.isUserInteractionEnabled = false
+        view.isAccessibilityElement = false
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        presentPickerIfNeeded()
+    }
+
+    func configure(
+        isPresented: Bool,
+        onPick: @escaping ([URL]) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.onPick = onPick
+        self.onCancel = onCancel
+
+        if isPresented {
+            shouldPresentPicker = true
+            presentPickerIfNeeded()
+        } else {
+            shouldPresentPicker = false
+            didPresentPickerForCurrentRequest = false
+            dismissPickerIfNeeded()
+        }
+    }
+
+    private func presentPickerIfNeeded() {
+        guard shouldPresentPicker,
+              !didPresentPickerForCurrentRequest,
+              viewIfLoaded?.window != nil,
+              documentPicker == nil,
+              presentedViewController == nil
+        else { return }
+
+        didPresentPickerForCurrentRequest = true
         let picker = UIDocumentPickerViewController(
             forOpeningContentTypes: [.item],
             asCopy: false
         )
         picker.allowsMultipleSelection = true
-        picker.delegate = context.coordinator
-        return picker
+        picker.modalPresentationStyle = .fullScreen
+        picker.delegate = self
+        documentPicker = picker
+        present(picker, animated: true) { [weak self, weak picker] in
+            picker?.presentationController?.delegate = self
+        }
     }
 
-    func updateUIViewController(
-        _ uiViewController: UIDocumentPickerViewController,
-        context: Context
+    private func dismissPickerIfNeeded() {
+        guard let picker = documentPicker else { return }
+        documentPicker = nil
+        guard picker.presentingViewController != nil, !picker.isBeingDismissed else { return }
+        picker.dismiss(animated: true)
+    }
+
+    private func finishPicker(
+        _ picker: UIDocumentPickerViewController,
+        completion: @escaping () -> Void
     ) {
-        context.coordinator.isPresented = $isPresented
-        context.coordinator.onPick = onPick
+        guard documentPicker === picker else { return }
+        documentPicker = nil
+
+        if picker.presentingViewController != nil, !picker.isBeingDismissed {
+            picker.dismiss(animated: true, completion: completion)
+        } else {
+            completion()
+        }
     }
 
-    final class Coordinator: NSObject, UIDocumentPickerDelegate {
-        var isPresented: Binding<Bool>
-        var onPick: ([URL]) -> Void
-
-        init(isPresented: Binding<Bool>, onPick: @escaping ([URL]) -> Void) {
-            self.isPresented = isPresented
-            self.onPick = onPick
+    func documentPicker(
+        _ controller: UIDocumentPickerViewController,
+        didPickDocumentsAt urls: [URL]
+    ) {
+        finishPicker(controller) { [weak self] in
+            self?.onPick(urls)
         }
+    }
 
-        func documentPicker(
-            _ controller: UIDocumentPickerViewController,
-            didPickDocumentsAt urls: [URL]
-        ) {
-            // Explicitly drive the SwiftUI presentation state closed before forwarding the URLs.
-            isPresented.wrappedValue = false
-            onPick(urls)
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        finishPicker(controller) { [weak self] in
+            self?.onCancel()
         }
+    }
 
-        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-            isPresented.wrappedValue = false
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        guard let picker = documentPicker else { return }
+        finishPicker(picker) { [weak self] in
+            self?.onCancel()
         }
     }
 }
