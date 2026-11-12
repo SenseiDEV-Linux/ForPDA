@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 import ComposableArchitecture
 import SharedUI
 import SFSafeSymbols
@@ -37,10 +38,6 @@ public struct QMSScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
-
-                QMSFileImporterHost(store: store.scope(\.upload, action: \.upload))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .allowsHitTesting(false)
 
                 if store.chat != nil {
                     ChatView(messages: store.messages) { message in
@@ -97,6 +94,19 @@ public struct QMSScreen: View {
             }
             .navigationTitle(store.title)
             ._toolbarTitleDisplayMode(.inline)
+            .fullScreenCover(isPresented: Binding($store.upload.destination.fileImporter)) {
+                QMSDocumentPicker(
+                    isPresented: Binding($store.upload.destination.fileImporter),
+                    onPick: { urls in
+                        if urls.isEmpty {
+                            store.send(.upload(.view(.fileImporterURLsRecievingFailure)))
+                        } else {
+                            store.send(.upload(.view(.fileImporterURLsRecieved(urls))))
+                        }
+                    }
+                )
+                .ignoresSafeArea()
+            }
             .alert($store.scope(\.$alert, action: \.alert))
             .onAppear {
                 send(.onAppear)
@@ -184,36 +194,53 @@ public struct QMSScreen: View {
     }
 }
 
-private struct QMSFileImporterHost: View {
-    @Perception.Bindable var store: StoreOf<UploadBoxFeature>
+private struct QMSDocumentPicker: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    let onPick: ([URL]) -> Void
 
-    init(store: StoreOf<UploadBoxFeature>) {
-        self.store = store
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isPresented: $isPresented, onPick: onPick)
     }
 
-    var body: some View {
-        Color.clear
-            .fileImporter(
-                isPresented: Binding($store.destination.fileImporter),
-                allowedContentTypes: [.item],
-                allowsMultipleSelection: true,
-                onCompletion: { result in
-                    switch result {
-                    case let .success(urls):
-                        guard !urls.isEmpty else {
-                            store.send(.view(.fileImporterURLsRecievingFailure))
-                            return
-                        }
-                        store.send(.view(.fileImporterURLsRecieved(urls)))
-                    case let .failure(error):
-                        if let error = error as? CocoaError, error.code == .userCancelled {
-                            // canceled by user
-                        } else {
-                            store.send(.view(.fileImporterURLsRecievingFailure))
-                        }
-                    }
-                }
-            )
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(
+            forOpeningContentTypes: [.item],
+            asCopy: false
+        )
+        picker.allowsMultipleSelection = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(
+        _ uiViewController: UIDocumentPickerViewController,
+        context: Context
+    ) {
+        context.coordinator.isPresented = $isPresented
+        context.coordinator.onPick = onPick
+    }
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        var isPresented: Binding<Bool>
+        var onPick: ([URL]) -> Void
+
+        init(isPresented: Binding<Bool>, onPick: @escaping ([URL]) -> Void) {
+            self.isPresented = isPresented
+            self.onPick = onPick
+        }
+
+        func documentPicker(
+            _ controller: UIDocumentPickerViewController,
+            didPickDocumentsAt urls: [URL]
+        ) {
+            // Explicitly drive the SwiftUI presentation state closed before forwarding the URLs.
+            isPresented.wrappedValue = false
+            onPick(urls)
+        }
+
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            isPresented.wrappedValue = false
+        }
     }
 }
 
