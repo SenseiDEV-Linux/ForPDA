@@ -19,7 +19,14 @@ extension QMSFeature {
         var body: some Reducer<State, Action> {
             Reduce<State, Action> { _, action in
                 switch action {
-                case .view(.onAppear), .view(.attachmentButtonTapped), .internal, .delegate, .binding, .alert, .upload, .bbPanel:
+                case .view(.onAppear),
+                     .view(.attachmentButtonTapped),
+                     .view(.deleteMessageTapped(messageId: _, isOwnMessage: _)),
+                     .view(.deleteMessageConfirmed(forAll: _)),
+                     .view(.saveImagesToPhotos(_)),
+                     .view(.saveImagesToFiles(_)),
+                     .view(.imageFileExportFinished(_)),
+                     .internal, .delegate, .binding, .alert, .upload, .bbPanel:
                     break
                     
                 case let .view(.sendMessageButtonTapped(draft)):
