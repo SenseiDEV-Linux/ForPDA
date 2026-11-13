@@ -98,10 +98,7 @@ public struct QMSScreen: View {
                                 )
                         )
                     )
-                    .environment(\.openURL, OpenURLAction(handler: { url in
-                        send(.urlTapped(url))
-                        return .handled
-                    }))
+                    .environment(\.openURL, OpenURLAction(handler: handleOpenURL))
                 } else {
                     PDALoader()
                         .frame(width: 24, height: 24)
@@ -158,6 +155,11 @@ public struct QMSScreen: View {
         message.attachments
             .filter { $0.type == .image }
             .map(\.full)
+    }
+
+    private func handleOpenURL(_ url: URL) -> OpenURLAction.Result {
+        send(.urlTapped(url))
+        return .handled
     }
 
     private func makeInputView(text: Binding<String>, style: InputViewStyle) -> AnyView {
