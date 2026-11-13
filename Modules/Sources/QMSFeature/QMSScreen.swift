@@ -68,17 +68,8 @@ public struct QMSScreen: View {
                 if store.chat != nil {
                     ChatView(messages: store.messages) { message in
                         // send(.sendMessageButtonTapped(message))
-                    } inputViewBuilder: { text, _, _, inputViewStyle, inputViewActionClosure, _ in
-                        WithPerceptionTracking {
-                            Group {
-                                switch inputViewStyle {
-                                case .message:
-                                    InputView(text: text)
-                                case .signature:
-                                    EmptyView()
-                                }
-                            }
-                        }
+                    } inputViewBuilder: { text, _, _, inputViewStyle, _, _ in
+                        makeInputView(text: text, style: inputViewStyle)
                     } messageMenuAction: { (action: ChatAction, _, message) in
                         handleMessageMenuAction(action, message: message)
                     }
@@ -167,6 +158,19 @@ public struct QMSScreen: View {
         message.attachments
             .filter { $0.type == .image }
             .map(\.full)
+    }
+
+    private func makeInputView(text: Binding<String>, style: InputViewStyle) -> AnyView {
+        switch style {
+        case .message:
+            return AnyView(
+                WithPerceptionTracking {
+                    InputView(text: text)
+                }
+            )
+        case .signature:
+            return AnyView(EmptyView())
+        }
     }
 
     private func InputView(text: Binding<String>) -> some View {
