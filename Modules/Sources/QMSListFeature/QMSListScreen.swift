@@ -53,7 +53,7 @@ public struct QMSListScreen: View {
                                                     }
                                                 }
                                         }
-                                        .listRowBackground(backgroundColors.tertiary)
+                                        .listRowBackground(QMSListGlassBackground())
                                         .scaleEffect(store.goTo == user.id ? scrollScale : 1)
                                         .id(user.id)
                                     }
@@ -81,7 +81,7 @@ public struct QMSListScreen: View {
                         QMSList {
                             ForEach(0..<8) { _ in
                                 UserRow(.placeholder)
-                                    .listRowBackground(backgroundColors.tertiary)
+                                    .listRowBackground(QMSListGlassBackground())
                                     .redacted(if: true)
                             }
                         }
@@ -213,7 +213,7 @@ public struct QMSListScreen: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(QMSListGlassBackground())
         .badge(user.unreadCount)
         ._badgeProminence(.increased)
     }
@@ -306,7 +306,7 @@ public struct QMSListScreen: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(QMSListGlassBackground())
         .badge(chat.unreadCount)
         ._badgeProminence(.increased)
         .contextMenu {
@@ -356,7 +356,7 @@ public struct QMSListScreen: View {
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(QMSListGlassBackground())
     }
     
     // MARK: - Helpers
@@ -429,4 +429,24 @@ public struct QMSListScreen: View {
         QMSListScreen(store: store)
     }
     .environment(\.tintColor, Color(.Theme.primary))
+}
+
+// A separate background keeps List's disclosure, badges and context menus native.
+private struct QMSListGlassBackground: View {
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            RoundedRectangle(cornerRadius: 22)
+                .fill(.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: 22))
+                .padding(.vertical, 2)
+        } else {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.thinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                }
+                .padding(.vertical, 2)
+        }
+    }
 }
