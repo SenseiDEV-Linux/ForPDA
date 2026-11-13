@@ -101,7 +101,8 @@ public struct ArticlesListScreen: View {
                                 date: article.date
                             ),
                             rowType: settingsToRow(store.listRowType),
-                            bundle: .module
+                            bundle: .module,
+                            usesGlass: true
                         ) { action in
                             switch action {
                             case .shareLink:     store.send(.cellMenuOpened(article, .shareLink))

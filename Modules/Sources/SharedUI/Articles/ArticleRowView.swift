@@ -27,6 +27,7 @@ public struct ArticleRowView: View {
     public let rowType: RowType
     public let bundle: Bundle
     public let isContextMenuSupported: Bool // used for search
+    private let usesGlass: Bool
     public let action: (ContextAction) -> Void
     
     private var isShort: Bool {
@@ -44,12 +45,14 @@ public struct ArticleRowView: View {
         rowType: RowType,
         bundle: Bundle,
         isContextMenuSupported: Bool = true,
+        usesGlass: Bool = false,
         action: @escaping (ContextAction) -> Void
     ) {
         self.state = state
         self.rowType = rowType
         self.bundle = bundle
         self.isContextMenuSupported = isContextMenuSupported
+        self.usesGlass = usesGlass
         self.action = action
     }
     
@@ -91,15 +94,14 @@ public struct ArticleRowView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 14)
         }
-        .background(
-            backgroundColors.primary
-//                .matchedGeometryEffect(id: "background\(id)", in: namespace)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.Separator.primary), lineWidth: isShort ? 0 : 0.67)
-        )
+        .background { CardBackground() }
+        .clipShape(RoundedRectangle(cornerRadius: glassEnabled ? 24 : 16))
+        .overlay {
+            if !glassEnabled {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(.Separator.primary), lineWidth: 0.67)
+            }
+        }
     }
     
     // MARK: - Short Row
@@ -107,8 +109,10 @@ public struct ArticleRowView: View {
     @ViewBuilder
     private func ShortRow() -> some View {
         VStack(spacing: 0) {
-            Separator()
-                .padding(.bottom, 12)
+            if !glassEnabled {
+                Separator()
+                    .padding(.bottom, 12)
+            }
             
             HStack(alignment: .top, spacing: 12) {
                 ArticleImage()
@@ -124,9 +128,24 @@ public struct ArticleRowView: View {
                 }
             }
         }
-        .background(
+        .padding(glassEnabled ? 12 : 0)
+        .background { CardBackground() }
+        .clipShape(RoundedRectangle(cornerRadius: glassEnabled ? 24 : 0))
+    }
+
+    private var glassEnabled: Bool {
+        usesGlass && isLiquidGlass
+    }
+
+    @ViewBuilder
+    private func CardBackground() -> some View {
+        if #available(iOS 26.0, *), usesGlass {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: 24))
+        } else {
             backgroundColors.primary
-        )
+        }
     }
     
     // MARK: - Image
