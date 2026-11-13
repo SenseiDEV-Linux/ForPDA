@@ -35,105 +35,128 @@ public struct QMSScreen: View {
     
     public var body: some View {
         WithPerceptionTracking {
-            ZStack {
-                backgroundColors.primary
-                    .ignoresSafeArea()
-
-                QMSFilePickerPresenter(
-                    isPresented: Binding($store.upload.destination.fileImporter).wrappedValue,
-                    onPick: { urls in
-                        if urls.isEmpty {
-                            store.send(.upload(.view(.fileImporterURLsRecievingFailure)))
-                        } else {
-                            store.send(.upload(.view(.fileImporterURLsRecieved(urls))))
-                        }
-                    },
-                    onCancel: {
-                        store.send(.upload(.destination(.dismiss)))
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .allowsHitTesting(false)
-
-                QMSImageExportPresenter(
-                    isPresented: store.isImageExportPresented,
-                    urls: store.imageExportFileURLs,
-                    onFinish: { didExport in
-                        store.send(.view(.imageFileExportFinished(didExport)))
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .allowsHitTesting(false)
-
-                if store.chat != nil {
-                    ChatView(messages: store.messages) { message in
-                        // send(.sendMessageButtonTapped(message))
-                    } inputViewBuilder: { text, _, _, inputViewStyle, _, _ in
-                        makeInputView(text: text, style: inputViewStyle)
-                    } messageMenuAction: { (action: ChatAction, _, message) in
-                        handleMessageMenuAction(action, message: message)
-                    }
-                    .keyboardDismissMode(.interactive)
-                    .enableLoadMore { _ in
-                        await send(.loadMoreTriggered)
-                    }
-                    .linkPreviewsDisabled()
-                    .messageUseStyler { string in
-                        return QMSBuilder(text: string).build()
-                    }
-                    .setAvailableInputs([.text])
-                    .chatTheme(
-                        ChatTheme(
-                            colors: ChatTheme
-                                .Colors(
-                                    mainBG: backgroundColors.primary,
-                                    messageMyBG: Color(.Background.quaternary),
-                                    messageMyText: Color(.Labels.primary),
-                                    messageMyTimeText: Color(.systemGray),
-                                    messageFriendBG: Color(.Background.quaternary),
-                                    messageFriendText: Color(.Labels.primary),
-                                    messageFriendTimeText: Color(.systemGray),
-                                    statusGray: Color(.Theme.primary),
-                                    sendButtonBackground: Color(.Theme.primary)
-                                )
-                        )
-                    )
-                    .environment(\.openURL, OpenURLAction(handler: handleOpenURL))
-                } else {
-                    PDALoader()
-                        .frame(width: 24, height: 24)
-                }
-            }
-            .navigationTitle(store.title)
-            ._toolbarTitleDisplayMode(.inline)
-            .alert($store.scope(\.$alert, action: \.alert))
-            .confirmationDialog(
-                Text("qms.delete.message.title", bundle: .module),
-                isPresented: Binding($store.isDeleteMessageConfirmationPresented),
-                titleVisibility: .visible
-            ) {
-                if store.pendingDeleteMessageIsOwn {
-                    Button(
-                        String(localized: "qms.delete.message.forAll", bundle: .module),
-                        role: .destructive
-                    ) {
-                        send(.deleteMessageConfirmed(forAll: true))
-                    }
-                }
-                Button(
-                    String(localized: "qms.delete.message.forMe", bundle: .module),
-                    role: .destructive
-                ) {
-                    send(.deleteMessageConfirmed(forAll: false))
-                }
-                Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
-            }
-            .onAppear {
-                send(.onAppear)
-            }
+            screenContent
         }
     }
-    
+
+    private var screenContent: some View {
+        ZStack {
+            backgroundColors.primary
+                .ignoresSafeArea()
+
+            filePickerPresenter
+            imageExportPresenter
+            chatContent
+        }
+        .navigationTitle(store.title)
+        ._toolbarTitleDisplayMode(.inline)
+        .alert($store.scope(\.$alert, action: \.alert))
+        .confirmationDialog(
+            Text("qms.delete.message.title", bundle: .module),
+            isPresented: Binding($store.isDeleteMessageConfirmationPresented),
+            titleVisibility: .visible
+        ) {
+            if store.pendingDeleteMessageIsOwn {
+                Button(
+                    String(localized: "qms.delete.message.forAll", bundle: .module),
+                    role: .destructive
+                ) {
+                    send(.deleteMessageConfirmed(forAll: true))
+                }
+            }
+            Button(
+                String(localized: "qms.delete.message.forMe", bundle: .module),
+                role: .destructive
+            ) {
+                send(.deleteMessageConfirmed(forAll: false))
+            }
+            Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
+        }
+        .onAppear {
+            send(.onAppear)
+        }
+    }
+
+    private var filePickerPresenter: some View {
+        QMSFilePickerPresenter(
+            isPresented: Binding($store.upload.destination.fileImporter).wrappedValue,
+            onPick: { urls in
+                if urls.isEmpty {
+                    store.send(.upload(.view(.fileImporterURLsRecievingFailure)))
+                } else {
+                    store.send(.upload(.view(.fileImporterURLsRecieved(urls))))
+                }
+            },
+            onCancel: {
+                store.send(.upload(.destination(.dismiss)))
+            }
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+    }
+
+    private var imageExportPresenter: some View {
+        QMSImageExportPresenter(
+            isPresented: store.isImageExportPresented,
+            urls: store.imageExportFileURLs,
+            onFinish: { didExport in
+                store.send(.view(.imageFileExportFinished(didExport)))
+            }
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+    }
+
+    private var chatContent: AnyView {
+        if store.chat != nil {
+            return makeChatView()
+        } else {
+            return AnyView(
+                PDALoader()
+                    .frame(width: 24, height: 24)
+            )
+        }
+    }
+
+    private func makeChatView() -> AnyView {
+        AnyView(
+            ChatView(messages: store.messages) { message in
+                // send(.sendMessageButtonTapped(message))
+            } inputViewBuilder: { text, _, _, inputViewStyle, _, _ in
+                makeInputView(text: text, style: inputViewStyle)
+            } messageMenuAction: { (action: ChatAction, _, message) in
+                handleMessageMenuAction(action, message: message)
+            }
+            .keyboardDismissMode(.interactive)
+            .enableLoadMore { _ in
+                await send(.loadMoreTriggered)
+            }
+            .linkPreviewsDisabled()
+            .messageUseStyler { string in
+                QMSBuilder(text: string).build()
+            }
+            .setAvailableInputs([.text])
+            .chatTheme(qmsChatTheme)
+            .environment(\.openURL, OpenURLAction(handler: handleOpenURL))
+        )
+    }
+
+    private var qmsChatTheme: ChatTheme {
+        ChatTheme(
+            colors: ChatTheme.Colors(
+                mainBG: backgroundColors.primary,
+                messageMyBG: Color(.Background.quaternary),
+                messageMyText: Color(.Labels.primary),
+                messageMyTimeText: Color(.systemGray),
+                messageFriendBG: Color(.Background.quaternary),
+                messageFriendText: Color(.Labels.primary),
+                messageFriendTimeText: Color(.systemGray),
+                statusGray: Color(.Theme.primary),
+                sendButtonBackground: Color(.Theme.primary)
+            )
+        )
+    }
+
     private func handleMessageMenuAction(_ action: ChatAction, message: ExyteChat.Message) {
         switch action {
         case .copy:
