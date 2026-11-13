@@ -56,7 +56,7 @@ public struct ForumsListScreen: View {
                             } header: {
                                 Header(forumRow: forumRow)
                             }
-                            .listRowBackground(backgroundColors.tertiary)
+                            .listRowBackground(ForumListSurface(fallback: backgroundColors.tertiary))
                         }
                     }
                     .scrollContentBackground(.hidden)
@@ -119,5 +119,20 @@ public struct ForumsListScreen: View {
                 ForumsListFeature()
             }
         )
+    }
+}
+
+// Keep the native grouped list, including its separators and section behaviour.
+private struct ForumListSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
     }
 }

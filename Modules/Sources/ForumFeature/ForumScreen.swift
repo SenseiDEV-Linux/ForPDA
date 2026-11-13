@@ -156,7 +156,8 @@ public struct ForumScreen: View {
         .background {
             if #available(iOS 26, *) {
                 ConcentricRectangle()
-                    .fill(backgroundColors.tertiary)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: ConcentricRectangle())
             } else {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(backgroundColors.tertiary)
@@ -246,7 +247,7 @@ public struct ForumScreen: View {
                         }
                         .padding(.leading, supportsMultiSelection && store.isMultiSelectionMode ? 10 : 16)
                         .listRowBackground(
-                            backgroundColors.tertiary
+                            ForumGlassSurface(fallback: backgroundColors.tertiary)
                                 .clipShape(.rect(
                                     topLeadingRadius: index == 0 ? radius : 0, bottomLeadingRadius: index == topics.count - 1 ? radius : 0,
                                     bottomTrailingRadius: index == topics.count - 1 ? radius : 0, topTrailingRadius: index == 0 ? radius : 0
@@ -268,7 +269,7 @@ public struct ForumScreen: View {
                 section: pinned ? .pinnedTopics : .topics
             )
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ForumGlassSurface(fallback: backgroundColors.tertiary))
         .disabled(store.isMultiSelectionMode && !supportsMultiSelection)
     }
     
@@ -437,7 +438,7 @@ public struct ForumScreen: View {
         } header: {
             Header(title: "Subforums", section: .subforums)
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ForumGlassSurface(fallback: backgroundColors.tertiary))
         .disabled(store.isMultiSelectionMode)
     }
     
@@ -457,7 +458,7 @@ public struct ForumScreen: View {
         } header: {
             Header(title: "Announcements", section: .announcements)
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ForumGlassSurface(fallback: backgroundColors.tertiary))
         .disabled(store.isMultiSelectionMode)
     }
     
@@ -713,5 +714,20 @@ extension Forum {
                 ForumFeature()
             }
         )
+    }
+}
+
+// The grouped list still owns its corners, separators and interactive rows.
+private struct ForumGlassSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
     }
 }
