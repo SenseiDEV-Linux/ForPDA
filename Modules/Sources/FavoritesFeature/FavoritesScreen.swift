@@ -260,7 +260,7 @@ public struct FavoritesScreen: View {
                     }
                 }
                 .listRowBackground(
-                    backgroundColors.tertiary
+                    FavoritesGlassSurface(fallback: backgroundColors.tertiary)
                         .clipShape(
                             .rect(
                                 topLeadingRadius: index == 0 ? radius : 0,
@@ -283,7 +283,7 @@ public struct FavoritesScreen: View {
                        : LocalizedStringKey("Topics / Forums"))
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(FavoritesGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Navigation
@@ -368,4 +368,19 @@ public struct FavoritesScreen: View {
     }
     .environment(\.tintColor, Color(.Theme.primary))
     .tint(Color(.Theme.primary))
+}
+
+// Preserve the list's grouping and row interactions while updating its surface.
+private struct FavoritesGlassSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
+    }
 }
