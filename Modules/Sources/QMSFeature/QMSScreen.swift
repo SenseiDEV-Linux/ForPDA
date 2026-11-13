@@ -53,7 +53,7 @@ public struct QMSScreen: View {
         .alert($store.scope(\.$alert, action: \.alert))
         .confirmationDialog(
             Text("qms.delete.message.title", bundle: .module),
-            isPresented: Binding($store.isDeleteMessageConfirmationPresented),
+            isPresented: Binding(projectedValue: $store.isDeleteMessageConfirmationPresented),
             titleVisibility: .visible
         ) {
             if store.pendingDeleteMessageIsOwn {
