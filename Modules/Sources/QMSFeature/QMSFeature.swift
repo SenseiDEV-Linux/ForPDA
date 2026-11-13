@@ -5,7 +5,11 @@
 //  Created by Ilia Lubianoi on 17.11.2024.
 //
 
+import CoreFoundation
 import Foundation
+import ImageIO
+import Photos
+import UniformTypeIdentifiers
 import ComposableArchitecture
 import APIClient
 import QMSClient
@@ -17,6 +21,9 @@ import TCAExtensions
 import ExyteChat
 import UploadBoxFeature
 import BBPanelFeature
+
+// ExyteChat dismisses its full-screen message menu after a 300 ms animation.
+private let qmsChatMenuDismissDelay = Duration.milliseconds(350)
 
 @Reducer
 public struct QMSFeature: Reducer, Sendable {
@@ -46,6 +53,12 @@ public struct QMSFeature: Reducer, Sendable {
         public var messages: [Message] = []
         var fullImageURLs: [Int: URL] = [:]
         var requestedFullImageURLIDs: Set<Int> = []
+        var pendingDeleteMessageId: Int?
+        var pendingDeleteMessageIsOwn = false
+        var isDeleteMessageConfirmationPresented = false
+        var isDeletingMessage = false
+        var imageExportFileURLs: [URL] = []
+        var isImageExportPresented = false
         var upload = UploadBoxFeature.State(type: .qms)
         var bbPanel = BBPanelFeature.State(for: .qms)
         var draftTextRange: NSRange?
@@ -102,6 +115,11 @@ public struct QMSFeature: Reducer, Sendable {
             case sendMessageButtonTapped(DraftMessage)
             case loadMoreTriggered
             case urlTapped(URL)
+            case deleteMessageTapped(messageId: Int, isOwnMessage: Bool)
+            case deleteMessageConfirmed(forAll: Bool)
+            case saveImagesToPhotos([URL])
+            case saveImagesToFiles([URL])
+            case imageFileExportFinished(Bool)
         }
         
         case `internal`(Internal)
@@ -111,6 +129,11 @@ public struct QMSFeature: Reducer, Sendable {
             case fullImageURLLoaded(Int, Result<URL, any Error>)
             case messageSent([Int])
             case messageSendError(any Error)
+            case showDeleteMessageConfirmation
+            case messageDeleted(Int, Result<String, any Error>)
+            case imagesSavedToPhotos
+            case imageSaveFailed(any Error)
+            case imageFilesPrepared(Result<[URL], any Error>)
         }
         
         case delegate(Delegate)
@@ -165,7 +188,77 @@ public struct QMSFeature: Reducer, Sendable {
             case .view(.attachmentButtonTapped):
                 guard !state.isSending, !state.upload.isAnyFileUploading else { return .none }
                 return .send(.upload(.view(.selectFilesButtonTapped)))
-                
+
+            case let .view(.deleteMessageTapped(messageId, isOwnMessage)):
+                guard !state.isDeletingMessage else { return .none }
+                state.pendingDeleteMessageId = messageId
+                state.pendingDeleteMessageIsOwn = isOwnMessage
+                state.isDeleteMessageConfirmationPresented = false
+                return .run { send in
+                    do {
+                        try await Task.sleep(for: qmsChatMenuDismissDelay)
+                        await send(.internal(.showDeleteMessageConfirmation))
+                    } catch is CancellationError {
+                        return
+                    }
+                }
+
+            case let .view(.deleteMessageConfirmed(forAll)):
+                guard let messageId = state.pendingDeleteMessageId,
+                      !state.isDeletingMessage,
+                      !forAll || state.pendingDeleteMessageIsOwn
+                else { return .none }
+                state.pendingDeleteMessageId = nil
+                state.isDeleteMessageConfirmationPresented = false
+                state.isDeletingMessage = true
+                return .run { [chatId = state.chatId] send in
+                    let result = await Result {
+                        try await qmsClient.deleteMessage(chatId, messageId, forAll)
+                    }
+                    await send(.internal(.messageDeleted(messageId, result)))
+                }
+
+            case let .view(.saveImagesToPhotos(urls)):
+                guard !urls.isEmpty else { return .none }
+                return .run { send in
+                    do {
+                        try await Task.sleep(for: qmsChatMenuDismissDelay)
+                        let images = try await downloadQMSImages(from: urls)
+                        try await saveQMSImagesToPhotos(images)
+                        await send(.internal(.imagesSavedToPhotos))
+                    } catch is CancellationError {
+                        return
+                    } catch {
+                        await send(.internal(.imageSaveFailed(error)))
+                    }
+                }
+
+            case let .view(.saveImagesToFiles(urls)):
+                guard !urls.isEmpty else { return .none }
+                return .run { send in
+                    do {
+                        try await Task.sleep(for: qmsChatMenuDismissDelay)
+                        let result = await Result {
+                            let images = try await downloadQMSImages(from: urls)
+                            return try writeQMSImagesToTemporaryFiles(images)
+                        }
+                        await send(.internal(.imageFilesPrepared(result)))
+                    } catch is CancellationError {
+                        return
+                    }
+                }
+
+            case let .view(.imageFileExportFinished(didExport)):
+                let fileURLs = state.imageExportFileURLs
+                state.imageExportFileURLs = []
+                state.isImageExportPresented = false
+                if didExport {
+                    state.alert = qmsImagesSavedToFilesAlert()
+                }
+                return .run { _ in
+                    removeQMSImageExportFiles(fileURLs)
+                }
+
             case let .bbPanel(.delegate(.tagTapped(tag))):
                 let selection = state.draftTextRange ?? NSRange(location: state.draftText.utf16.count, length: 0)
                 if let range = Range(selection, in: state.draftText) {
@@ -241,6 +334,51 @@ public struct QMSFeature: Reducer, Sendable {
                 analyticsClient.capture(error)
                 return .none
                 
+            case .internal(.showDeleteMessageConfirmation):
+                guard state.pendingDeleteMessageId != nil, !state.isDeletingMessage else { return .none }
+                state.isDeleteMessageConfirmationPresented = true
+                return .none
+
+            case let .internal(.messageDeleted(messageId, result)):
+                state.isDeletingMessage = false
+                switch result {
+                case .success:
+                    if var chat = state.chat {
+                        chat.messages.removeAll { $0.id == messageId }
+                        state.chat = chat
+                    }
+                    state.messages.removeAll { $0.id == String(messageId) }
+                    return .send(.internal(.loadChat))
+                case let .failure(error):
+                    state.alert = .somethingWentWrong
+                    analyticsClient.capture(error)
+                    return .none
+                }
+
+            case .internal(.imagesSavedToPhotos):
+                state.alert = qmsImagesSavedToPhotosAlert()
+                return .none
+
+            case let .internal(.imageSaveFailed(error)):
+                state.alert = qmsImageSaveFailedAlert(for: error)
+                analyticsClient.capture(error)
+                return .none
+
+            case let .internal(.imageFilesPrepared(result)):
+                switch result {
+                case let .success(fileURLs):
+                    guard !fileURLs.isEmpty else {
+                        state.alert = .somethingWentWrong
+                        return .none
+                    }
+                    state.imageExportFileURLs = fileURLs
+                    state.isImageExportPresented = true
+                case let .failure(error):
+                    state.alert = qmsImageSaveFailedAlert(for: error)
+                    analyticsClient.capture(error)
+                }
+                return .none
+
             case let .view(.urlTapped(url)):
                 guard url.absoluteString.contains("act=findpost"),
                       let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
@@ -458,3 +596,174 @@ public struct QMSFeature: Reducer, Sendable {
         return localMessages
     }
     }
+
+private struct QMSImageExportFile: Equatable, Sendable {
+    let data: Data
+    let fileName: String
+}
+
+private enum QMSImageExportError: Error, Sendable {
+    case noImages
+    case invalidImage
+    case photoLibraryAccessDenied
+    case photoSaveFailed
+    case invalidResponse
+}
+
+private func downloadQMSImages(from urls: [URL]) async throws -> [QMSImageExportFile] {
+    let imageURLs = urls.filter { $0.scheme == "https" || $0.scheme == "http" }
+    guard !imageURLs.isEmpty else { throw QMSImageExportError.noImages }
+
+    var images: [QMSImageExportFile] = []
+    for (index, url) in imageURLs.enumerated() {
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if let response = response as? HTTPURLResponse,
+           !(200..<300).contains(response.statusCode) {
+            throw QMSImageExportError.invalidResponse
+        }
+        guard !data.isEmpty,
+              let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
+              CGImageSourceGetCount(imageSource) > 0,
+              let imageTypeIdentifier = CGImageSourceGetType(imageSource) as String?
+        else {
+            throw QMSImageExportError.invalidImage
+        }
+        images.append(QMSImageExportFile(
+            data: data,
+            fileName: qmsImageFileName(
+                for: url,
+                index: index,
+                mimeType: response.mimeType,
+                imageTypeIdentifier: imageTypeIdentifier
+            )
+        ))
+    }
+    return images
+}
+
+private func qmsImageFileName(
+    for url: URL,
+    index: Int,
+    mimeType: String?,
+    imageTypeIdentifier: String
+) -> String {
+    let candidate = url.lastPathComponent.removingPercentEncoding ?? url.lastPathComponent
+    let path = URL(fileURLWithPath: candidate)
+    let candidateExtension = path.pathExtension.lowercased()
+    let mimeTypeExtension: String? = switch mimeType?.lowercased() {
+    case "image/jpeg", "image/jpg": "jpg"
+    case "image/png": "png"
+    case "image/gif": "gif"
+    case "image/heic": "heic"
+    case "image/webp": "webp"
+    default: nil
+    }
+    let supportedExtensions = ["jpg", "jpeg", "png", "gif", "heic", "webp", "tif", "tiff", "bmp"]
+    let detectedExtension = UTType(imageTypeIdentifier)?.preferredFilenameExtension?.lowercased()
+    let fileExtension = [detectedExtension, mimeTypeExtension, candidateExtension]
+        .compactMap { $0 }
+        .first(where: supportedExtensions.contains) ?? "jpg"
+    let rawName = path.deletingPathExtension().lastPathComponent
+    let safeName = rawName
+        .replacingOccurrences(of: "/", with: "-")
+        .replacingOccurrences(of: "\\", with: "-")
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    let baseName = safeName.isEmpty ? "QMS-image" : safeName
+    return "\(baseName)-\(index + 1).\(fileExtension)"
+}
+
+private func saveQMSImagesToPhotos(_ images: [QMSImageExportFile]) async throws {
+    let authorizationStatus = await withCheckedContinuation { continuation in
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            continuation.resume(returning: status)
+        }
+    }
+    guard authorizationStatus == .authorized else {
+        throw QMSImageExportError.photoLibraryAccessDenied
+    }
+
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+        PHPhotoLibrary.shared().performChanges {
+            for image in images {
+                let request = PHAssetCreationRequest.forAsset()
+                request.addResource(with: .photo, data: image.data, options: nil)
+            }
+        } completionHandler: { success, error in
+            if success {
+                continuation.resume(returning: ())
+            } else {
+                continuation.resume(throwing: error ?? QMSImageExportError.photoSaveFailed)
+            }
+        }
+    }
+}
+
+private func writeQMSImagesToTemporaryFiles(_ images: [QMSImageExportFile]) throws -> [URL] {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("qms-image-export-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    do {
+        return try images.map { image in
+            let url = directory.appendingPathComponent(image.fileName)
+            try image.data.write(to: url, options: .atomic)
+            return url
+        }
+    } catch {
+        try? FileManager.default.removeItem(at: directory)
+        throw error
+    }
+}
+
+private func removeQMSImageExportFiles(_ urls: [URL]) {
+    let directories = Set(urls.map(\.deletingLastPathComponent()))
+    for directory in directories {
+        try? FileManager.default.removeItem(at: directory)
+    }
+}
+
+private func qmsImageSaveFailedAlert(for error: any Error) -> AlertState<QMSFeature.Action.Alert> {
+    let isPhotoLibraryAccessDenied: Bool
+    if let exportError = error as? QMSImageExportError,
+       case .photoLibraryAccessDenied = exportError {
+        isPhotoLibraryAccessDenied = true
+    } else {
+        isPhotoLibraryAccessDenied = false
+    }
+
+    return AlertState {
+        TextState("qms.image.save.failed.title", bundle: .module)
+    } actions: {
+        ButtonState(role: .cancel, action: .ok) {
+            TextState("OK", bundle: .module)
+        }
+    } message: {
+        isPhotoLibraryAccessDenied
+            ? TextState("qms.image.save.photos.permission.message", bundle: .module)
+            : TextState("qms.image.save.failed.message", bundle: .module)
+    }
+}
+
+private func qmsImagesSavedToPhotosAlert() -> AlertState<QMSFeature.Action.Alert> {
+    AlertState {
+        TextState("qms.image.saved.photos.title", bundle: .module)
+    } actions: {
+        ButtonState(role: .cancel, action: .ok) {
+            TextState("OK", bundle: .module)
+        }
+    } message: {
+        TextState("qms.image.saved.photos.message", bundle: .module)
+    }
+}
+
+private func qmsImagesSavedToFilesAlert() -> AlertState<QMSFeature.Action.Alert> {
+    AlertState {
+        TextState("qms.image.saved.files.title", bundle: .module)
+    } actions: {
+        ButtonState(role: .cancel, action: .ok) {
+            TextState("OK", bundle: .module)
+        }
+    } message: {
+        TextState("qms.image.saved.files.message", bundle: .module)
+    }
+}

@@ -1262,6 +1262,7 @@ extension InfoPlist {
             "NSCameraUsageDescription": "To capture and send photos in QMS",
             "NSMicrophoneUsageDescription": "To send voice messages in QMS",
             "NSPhotoLibraryUsageDescription": "To send attachments in QMS",
+            "NSPhotoLibraryAddUsageDescription": "To save images from QMS to your photo library",
             
             "POSTHOG_TOKEN": "$(POSTHOG_TOKEN)",
             "SENTRY_DSN": "$(SENTRY_DSN)",
