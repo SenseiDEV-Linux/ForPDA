@@ -80,26 +80,7 @@ public struct QMSScreen: View {
                             }
                         }
                     } messageMenuAction: { (action: ChatAction, _, message) in
-                        switch action {
-                        case .copy:
-                            UIPasteboard.general.string = message.text
-                        case .delete:
-                            guard let messageId = Int(message.id) else { return }
-                            send(.deleteMessageTapped(
-                                messageId: messageId,
-                                isOwnMessage: message.user.isCurrentUser
-                            ))
-                        case .saveToPhotos:
-                            let urls = message.attachments
-                                .filter { $0.type == .image }
-                                .map(\.full)
-                            send(.saveImagesToPhotos(urls))
-                        case .saveToFiles:
-                            let urls = message.attachments
-                                .filter { $0.type == .image }
-                                .map(\.full)
-                            send(.saveImagesToFiles(urls))
-                        }
+                        handleMessageMenuAction(action, message: message)
                     }
                     .keyboardDismissMode(.interactive)
                     .enableLoadMore { _ in
@@ -165,6 +146,29 @@ public struct QMSScreen: View {
         }
     }
     
+    private func handleMessageMenuAction(_ action: ChatAction, message: ExyteChat.Message) {
+        switch action {
+        case .copy:
+            UIPasteboard.general.string = message.text
+        case .delete:
+            guard let messageId = Int(message.id) else { return }
+            send(.deleteMessageTapped(
+                messageId: messageId,
+                isOwnMessage: message.user.isCurrentUser
+            ))
+        case .saveToPhotos:
+            send(.saveImagesToPhotos(imageURLs(in: message)))
+        case .saveToFiles:
+            send(.saveImagesToFiles(imageURLs(in: message)))
+        }
+    }
+
+    private func imageURLs(in message: ExyteChat.Message) -> [URL] {
+        message.attachments
+            .filter { $0.type == .image }
+            .map(\.full)
+    }
+
     private func InputView(text: Binding<String>) -> some View {
         VStack(spacing: 8) {
             UploadBoxView(

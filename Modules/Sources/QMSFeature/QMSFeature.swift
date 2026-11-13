@@ -716,7 +716,7 @@ private func writeQMSImagesToTemporaryFiles(_ images: [QMSImageExportFile]) thro
 }
 
 private func removeQMSImageExportFiles(_ urls: [URL]) {
-    let directories = Set(urls.map(\.deletingLastPathComponent()))
+    let directories = Set(urls.map { $0.deletingLastPathComponent() })
     for directory in directories {
         try? FileManager.default.removeItem(at: directory)
     }
