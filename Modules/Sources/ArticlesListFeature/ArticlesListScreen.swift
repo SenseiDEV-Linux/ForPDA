@@ -10,6 +10,7 @@ import ComposableArchitecture
 import SharedUI
 import Models
 import SFSafeSymbols
+import NukeUI
 
 public struct ArticlesListScreen: View {
     
@@ -32,6 +33,11 @@ public struct ArticlesListScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if #available(iOS 26.0, *), case let .loaded(articles) = store.viewState,
+                   let imageURL = articles.first?.imageUrl {
+                    BlurredFeedBackground(imageURL: imageURL)
+                }
                 
                 switch store.viewState {
                 case .loading:
@@ -117,7 +123,7 @@ public struct ArticlesListScreen: View {
                     .padding(.bottom, 14)
                     .listRowSeparator(.hidden)
                     .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    .listRowBackground(backgroundColors.primary)
+                    .listRowBackground(isLiquidGlass ? Color.clear : backgroundColors.primary)
                     .onAppear {
                         guard let index = store.articles.firstIndex(of: article) else { return }
                         if store.articles.count - 5 == index {
@@ -134,12 +140,38 @@ public struct ArticlesListScreen: View {
                     .padding(.bottom, 20)
                     .frame(maxWidth: .infinity)
                     .listRowSeparator(.hidden)
-                    .listRowBackground(backgroundColors.primary)
+                    .listRowBackground(isLiquidGlass ? Color.clear : backgroundColors.primary)
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
     
+    // The first cover supplies subtle colour behind the glass cards. The tint keeps
+    // foreground text legible and provides a stable fallback while the image loads.
+    private func BlurredFeedBackground(imageURL: URL) -> some View {
+        GeometryReader { geometry in
+            LazyImage(url: imageURL) { state in
+                if let image = state.image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .blur(radius: 45, opaque: true)
+                        .overlay(backgroundColors.primary.opacity(0.78))
+                } else {
+                    backgroundColors.primary
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
     private func settingsToRow(_ rowType: AppSettings.ArticleListRowType) -> ArticleRowView.RowType {
         rowType == AppSettings.ArticleListRowType.normal ? ArticleRowView.RowType.normal : ArticleRowView.RowType.short
     }
