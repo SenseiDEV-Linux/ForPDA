@@ -195,10 +195,10 @@ public struct SettingsScreen: View {
         }
         // TODO: Wacky animation
         .background(
-            (isLiquidGlass && customEffectsEnabled ? Color.clear : backgroundColors.primary)
+            backgroundColors.primary
                 .animation(.default, value: colorScheme)
         )
-        .listRowBackground(SettingsGlassSurface(fallback: backgroundColors.primary))
+        .listRowBackground(backgroundColors.primary)
     }
     
     // MARK: - Scheme Button
