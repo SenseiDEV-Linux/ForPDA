@@ -36,6 +36,10 @@ public struct QMSListScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    QMSBlurredBackdrop(tint: tintColor)
+                }
                 
                     switch store.viewState {
                     case let .loaded(qms):
@@ -448,5 +452,31 @@ private struct QMSListGlassBackground: View {
                 }
                 .padding(.vertical, 2)
         }
+    }
+}
+
+// Soft colour behind the glass, kept out of the accessibility and hit-test trees.
+private struct QMSBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

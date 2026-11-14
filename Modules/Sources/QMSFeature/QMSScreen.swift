@@ -44,6 +44,10 @@ public struct QMSScreen: View {
             backgroundColors.primary
                 .ignoresSafeArea()
 
+            if isLiquidGlass {
+                QMSBlurredBackdrop(tint: tintColor)
+            }
+
             filePickerPresenter
             imageExportPresenter
             chatContent
@@ -144,7 +148,7 @@ public struct QMSScreen: View {
     private var qmsChatTheme: ChatTheme {
         ChatTheme(
             colors: ChatTheme.Colors(
-                mainBG: backgroundColors.primary,
+                mainBG: isLiquidGlass ? .clear : backgroundColors.primary,
                 messageMyBG: tintColor.opacity(isLiquidGlass ? 0.20 : 0.16),
                 messageMyText: Color(.Labels.primary),
                 messageMyTimeText: Color(.systemGray),
@@ -572,4 +576,30 @@ private final class QMSImageExportPresenterController: UIViewController,
     )
     .environment(\.tintColor, Color(.Theme.primary))
     .environment(\.locale, Locale(identifier: "en"))
+}
+
+// Soft colour behind the glass, kept out of the accessibility and hit-test trees.
+private struct QMSBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }
