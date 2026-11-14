@@ -45,6 +45,10 @@ public struct FavoritesScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
+                if isLiquidGlass {
+                    FavoritesBlurredBackdrop(tint: tintColor)
+                }
+
                 if store.shouldShowEmptyState {
                     EmptyFavorites()
                 } else if !store.isLoading {
@@ -368,6 +372,32 @@ public struct FavoritesScreen: View {
     }
     .environment(\.tintColor, Color(.Theme.primary))
     .tint(Color(.Theme.primary))
+}
+
+// A soft colour backdrop remains behind the glass without covering list content.
+private struct FavoritesBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }
 
 // Preserve the list's grouping and row interactions while updating its surface.
