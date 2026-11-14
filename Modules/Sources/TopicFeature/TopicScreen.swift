@@ -85,6 +85,10 @@ public struct TopicScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    TopicReadingBackdrop(tint: tintColor)
+                }
                 
                 ScrollViewReader { proxy in
                     WithPerceptionTracking {
@@ -358,7 +362,9 @@ public struct TopicScreen: View {
                 PollView(poll: poll, onVoteButtonTapped: { selections in
                     send(.topicPollVoteButtonTapped(selections))
                 })
-                .padding(.top, store.shouldShowTopicHatButton ? 16 : 0)
+                .padding(.top, store.shouldShowTopicHatButton || isLiquidGlass ? 16 : 0)
+                .background { TopicGlassSurface() }
+                .padding(.horizontal, isLiquidGlass ? 12 : 0)
             }
             
             PostSeparator()
@@ -379,7 +385,10 @@ public struct TopicScreen: View {
                     VStack(spacing: 0) {
                         Post(post)
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
+                            .padding(.vertical, isLiquidGlass ? 16 : 0)
+                            .background { TopicGlassSurface() }
+                            .padding(.horizontal, isLiquidGlass ? 12 : 0)
+                            .padding(.bottom, isLiquidGlass ? 0 : 16)
                         
                         PostSeparator()
                     }
@@ -396,9 +405,9 @@ public struct TopicScreen: View {
                                 .fill(maskColor)
                                 .frame(
                                     // + LazyVStack spacing - Separator height
-                                    height: proxy.size.height + 16 - 10
+                                    height: isLiquidGlass ? proxy.size.height : proxy.size.height + 16 - 10
                                 )
-                                .padding(.top, -16) // LazyVStack spacing
+                                .padding(.top, isLiquidGlass ? 0 : -16) // LazyVStack spacing
                                 .allowsHitTesting(false)
                         }
                     }
@@ -410,8 +419,8 @@ public struct TopicScreen: View {
     @ViewBuilder
     private func PostSeparator() -> some View {
         Rectangle()
-            .foregroundStyle(backgroundColors.tertiary)
-            .frame(height: 10)
+            .foregroundStyle(isLiquidGlass ? Color.clear : backgroundColors.tertiary)
+            .frame(height: isLiquidGlass ? 0 : 10)
     }
     
     // MARK: - Post
@@ -812,4 +821,41 @@ private extension TopicPostsFilter {
         }
     )
     .tint(Color(.Theme.primary))
+}
+
+// A subdued blurred backdrop keeps forum posts readable in light and dark themes.
+private struct TopicReadingBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.18))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.12))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+// Cards leave post controls and text selection in the original view hierarchy.
+private struct TopicGlassSurface: View {
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: 24))
+        }
+    }
 }
