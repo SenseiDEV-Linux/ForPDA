@@ -11,6 +11,7 @@ import SharedUI
 import Models
 
 public struct NotificationsScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
     
     @Perception.Bindable public var store: StoreOf<NotificationsFeature>
     @Environment(\.tintColor) private var tintColor
@@ -25,6 +26,10 @@ public struct NotificationsScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass && customEffectsEnabled {
+                    NotificationsBlurredBackdrop(tint: tintColor)
+                }
                 
                 List {
                     Section {
@@ -32,7 +37,6 @@ public struct NotificationsScreen: View {
                             VStack(spacing: 8) {
                                 Text("Notifications are disabled", bundle: .module)
                                     .multilineTextAlignment(.center)
-                                    .listRowBackground(backgroundColors.tertiary)
                                     .frame(maxWidth: .infinity)
                                 
                                 Button {
@@ -53,7 +57,7 @@ public struct NotificationsScreen: View {
                         Text("General", bundle: .module)
                     }
                     .tint(tintColor)
-                    .listRowBackground(backgroundColors.tertiary)
+                    .listRowBackground(NotificationsGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     
                     Section {
@@ -62,7 +66,7 @@ public struct NotificationsScreen: View {
                         Text("Advanced", bundle: .module)
                     }
                     .tint(tintColor)
-                    .listRowBackground(backgroundColors.tertiary)
+                    .listRowBackground(NotificationsGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 }
 //                .animation(.default, value: store.appSettings.backgroundNotifications2)
@@ -225,5 +229,46 @@ extension NotificationsDeliveryMethod {
         } withDependencies: {
             $0.notificationsClient.requestPermission = { false }
         })
+    }
+}
+
+// Match the other settings screens and respect the glass and blur preference.
+private struct NotificationsGlassSurface: View {
+    let fallback: Color
+    let enabled: Bool
+
+    var body: some View {
+        if #available(iOS 26.0, *), enabled {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
+    }
+}
+
+private struct NotificationsBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
