@@ -36,6 +36,10 @@ public struct MoreScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    MoreBlurredBackdrop(tint: tintColor)
+                }
                 
                 List {
                     ProfileSection()
@@ -75,7 +79,7 @@ public struct MoreScreen: View {
         Section {
             ProfileButton()
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Log In or Profile Button
@@ -212,7 +216,7 @@ public struct MoreScreen: View {
                  }
              }
          }
-         .listRowBackground(backgroundColors.tertiary)
+         .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
      }
     
     // MARK: - Settings Section
@@ -224,7 +228,7 @@ public struct MoreScreen: View {
                 send(.settingsButtonTapped)
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Links Section
@@ -248,7 +252,7 @@ public struct MoreScreen: View {
                 send(.githubButtonTapped)
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Logout Section
@@ -262,7 +266,7 @@ public struct MoreScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Row
@@ -310,6 +314,47 @@ public struct MoreScreen: View {
         }
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
         .frame(minHeight: 60)
+    }
+}
+
+// A soft backdrop gives the glass surfaces colour without obscuring their labels.
+private struct MoreBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+// Keep native grouped-list behaviour, with the existing surface on older iOS.
+private struct MoreGlassSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
     }
 }
 
