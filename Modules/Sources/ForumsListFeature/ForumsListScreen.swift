@@ -32,6 +32,10 @@ public struct ForumsListScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    ForumBlurredBackdrop(tint: tintColor)
+                }
                 
                 if let forums = store.forums {
                     List(forums, id: \.id) { forumRow in
@@ -134,5 +138,31 @@ private struct ForumListSurface: View {
         } else {
             fallback
         }
+    }
+}
+
+// Soft colour beneath the glass, without changing the readability of list text.
+private struct ForumBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
