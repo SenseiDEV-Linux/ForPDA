@@ -28,6 +28,10 @@ public struct DeviceTypeScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    DevDBBlurredBackdrop(tint: tintColor)
+                }
                 
                 List {
                     switch store.content {
@@ -70,7 +74,7 @@ public struct DeviceTypeScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(DevDBGlassSurface(fallback: backgroundColors.tertiary))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -103,7 +107,7 @@ public struct DeviceTypeScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(DevDBGlassSurface(fallback: backgroundColors.tertiary))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -134,7 +138,7 @@ public struct DeviceTypeScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(DevDBGlassSurface(fallback: backgroundColors.tertiary))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -174,10 +178,9 @@ public struct DeviceTypeScreen: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 19)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            DevDBGlassSurface(fallback: backgroundColors.tertiary, rounded: true)
+        }
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
@@ -217,7 +220,7 @@ public struct DeviceTypeScreen: View {
             .buttonStyle(.bordered)
             .tint(tintColor)
             .frame(height: 48)
-            .background(backgroundColors.primary)
+            .background(isLiquidGlass ? Color.clear : backgroundColors.primary)
             .animation(.default, value: store.categorySelection)
         }
     }
@@ -301,10 +304,9 @@ public struct DeviceTypeScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(12)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            DevDBGlassSurface(fallback: backgroundColors.tertiary, rounded: true)
+        }
     }
     
     // MARK: - Helpers
@@ -370,5 +372,53 @@ public struct DeviceTypeScreen: View {
                 DeviceTypeFeature()
             }
         )
+    }
+}
+
+private struct DevDBGlassSurface: View {
+    let fallback: Color
+    var rounded = false
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            if rounded {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .glassEffect(.regular, in: Rectangle())
+            }
+        } else if rounded {
+            RoundedRectangle(cornerRadius: 10).fill(fallback)
+        } else {
+            fallback
+        }
+    }
+}
+
+private struct DevDBBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

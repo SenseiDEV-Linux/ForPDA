@@ -34,6 +34,10 @@ public struct DeviceSpecificationsScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    DevDBBlurredBackdrop(tint: tintColor)
+                }
                 
                 if let specifications = store.specifications, !store.isLoading {
                     List {
@@ -111,7 +115,7 @@ public struct DeviceSpecificationsScreen: View {
         ._buttonStyle(myDevice ? .borderedProminent : .bordered)
         .tint(tintColor)
         .disabled(store.isMyDeviceLoading || store.isDevicesLimit)
-        .background(backgroundColors.primary, in: Capsule())
+        .background(isLiquidGlass ? Color.clear : backgroundColors.primary, in: Capsule())
         .frame(height: 48)
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
@@ -135,10 +139,9 @@ public struct DeviceSpecificationsScreen: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 19)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            DevDBGlassSurface(fallback: backgroundColors.tertiary, rounded: true)
+        }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
@@ -193,7 +196,7 @@ public struct DeviceSpecificationsScreen: View {
         } header: {
             SectionHeader(title: spec.title)
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(DevDBGlassSurface(fallback: backgroundColors.tertiary))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -319,4 +322,52 @@ private extension Button {
         )
     }
     .environment(\.tintColor, Color(.Theme.primary))
+}
+
+private struct DevDBGlassSurface: View {
+    let fallback: Color
+    var rounded = false
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            if rounded {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .glassEffect(.regular, in: Rectangle())
+            }
+        } else if rounded {
+            RoundedRectangle(cornerRadius: 10).fill(fallback)
+        } else {
+            fallback
+        }
+    }
+}
+
+private struct DevDBBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }
