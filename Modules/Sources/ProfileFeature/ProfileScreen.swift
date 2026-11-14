@@ -23,6 +23,7 @@ import TopicBuilder
 
 @ViewAction(for: ProfileFeature.self)
 public struct ProfileScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
     
     // MARK: - Profile properties
     
@@ -48,6 +49,10 @@ public struct ProfileScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass && customEffectsEnabled {
+                    ProfileBlurredBackdrop(tint: tintColor)
+                }
                 
                 if let user = store.user {
                     List {
@@ -244,10 +249,9 @@ public struct ProfileScreen: View {
                     }
                     .padding(.vertical, 8)
                     .padding(.horizontal, 10)
-                    .background(
-                        backgroundColors.tertiary
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    )
+                    .background {
+                        ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled, cornerRadius: 12)
+                    }
                 }
             }
         }
@@ -341,10 +345,9 @@ public struct ProfileScreen: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(12)
-                    .background(
-                        backgroundColors.tertiary
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    )
+                    .background {
+                        ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled, cornerRadius: 10)
+                    }
                     
                     if let status = user.statusAttributed {
                         VStack(spacing: 2) {
@@ -361,10 +364,9 @@ public struct ProfileScreen: View {
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(12)
-                        .background(
-                            backgroundColors.tertiary
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        )
+                        .background {
+                        ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled, cornerRadius: 10)
+                    }
                     }
                 }
                 
@@ -424,7 +426,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Restrictions")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -453,7 +455,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Personal info")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -471,7 +473,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "About me")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -488,7 +490,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Devices List")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -511,7 +513,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Site statistics")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -532,7 +534,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Forum statistics")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -598,10 +600,9 @@ public struct ProfileScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
-                .background(
-                    backgroundColors.tertiary
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                )
+                .background {
+                        ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled, cornerRadius: 10)
+                    }
             }
         }
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -619,7 +620,7 @@ public struct ProfileScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -828,10 +829,9 @@ public struct ProfileScreen: View {
                 .padding(12)
             }
         }
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+                        ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled, cornerRadius: 10)
+                    }
     }
     
     // MARK: - Attributed Content
@@ -912,4 +912,54 @@ extension User {
         )
     }
     .environment(\.tintColor, Color(.Theme.primary))
+}
+
+// Used by the profile and editing screens; disabled and older iOS retain their original surfaces.
+struct ProfileGlassSurface: View {
+    let fallback: Color
+    let enabled: Bool
+    var cornerRadius: CGFloat? = nil
+
+    var body: some View {
+        if #available(iOS 26.0, *), enabled {
+            if cornerRadius != nil {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .glassEffect(.regular, in: Rectangle())
+            }
+        } else if let cornerRadius {
+            RoundedRectangle(cornerRadius: cornerRadius).fill(fallback)
+        } else {
+            fallback
+        }
+    }
+}
+
+struct ProfileBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }

@@ -16,6 +16,7 @@ import BBPanelFeature
 
 @ViewAction(for: EditFeature.self)
 public struct EditScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
     
     @Perception.Bindable public var store: StoreOf<EditFeature>
     @Environment(\.tintColor) private var tintColor
@@ -34,6 +35,10 @@ public struct EditScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass && customEffectsEnabled {
+                    ProfileBlurredBackdrop(tint: tintColor)
+                }
                 
                 List {
                     AvatarRow()
@@ -75,7 +80,7 @@ public struct EditScreen: View {
                         UserBirthday()
                         UserGender()
                     }
-                    .listRowBackground(backgroundColors.tertiary)
+                    .listRowBackground(ProfileGlassSurface(fallback: backgroundColors.tertiary, enabled: customEffectsEnabled))
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     
                     Field(
