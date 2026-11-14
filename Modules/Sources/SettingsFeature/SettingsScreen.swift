@@ -27,6 +27,10 @@ public struct SettingsScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    SettingsBlurredBackdrop(tint: tintColor)
+                }
                 
                 List {
                     ThemeSection()
@@ -189,9 +193,10 @@ public struct SettingsScreen: View {
         }
         // TODO: Wacky animation
         .background(
-            backgroundColors.primary
+            (isLiquidGlass ? Color.clear : backgroundColors.primary)
                 .animation(.default, value: colorScheme)
         )
+        .listRowBackground(SettingsGlassSurface(fallback: backgroundColors.primary))
     }
     
     // MARK: - Scheme Button
@@ -264,7 +269,7 @@ public struct SettingsScreen: View {
         } header: {
             Header(title: "Basic")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(SettingsGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Advanced Section
@@ -300,7 +305,7 @@ public struct SettingsScreen: View {
                     #endif
                 }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(SettingsGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - About App Section
@@ -312,7 +317,7 @@ public struct SettingsScreen: View {
         } header: {
             Header(title: "About app")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(SettingsGlassSurface(fallback: backgroundColors.tertiary))
     }
 }
 
@@ -396,4 +401,44 @@ extension AppTintColor {
         )
     }
     .environment(\.tintColor, Color(.Theme.primary))
+}
+
+// Shared by settings screens; older iOS keeps the original opaque surfaces.
+struct SettingsGlassSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
+    }
+}
+
+struct SettingsBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }
