@@ -14,6 +14,8 @@ import GalleryFeature
 
 @ViewAction(for: DeviceSpecificationsFeature.self)
 public struct DeviceSpecificationsScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -35,7 +37,7 @@ public struct DeviceSpecificationsScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     DevDBBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -325,11 +327,13 @@ private extension Button {
 }
 
 private struct DevDBGlassSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
     var rounded = false
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             if rounded {
                 RoundedRectangle(cornerRadius: 24)
                     .fill(.clear)

@@ -16,6 +16,8 @@ import SkeletonUI
 import SmoothGradient
 
 public struct ArticleScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -70,7 +72,7 @@ public struct ArticleScreen: View {
                 .background {
                     ZStack {
                         backgroundColors.primary
-                        if isLiquidGlass {
+                        if isLiquidGlass && customEffectsEnabled {
                             ArticleReadingBackdrop(
                                 imageURL: store.articlePreview.imageUrl,
                                 baseColor: backgroundColors.primary
@@ -179,7 +181,7 @@ public struct ArticleScreen: View {
                             
                         } else if let elements = store.elements {
                             ArticleView(elements: elements)
-                                .background(isLiquidGlass ? Color.clear : backgroundColors.primary)
+                                .background(isLiquidGlass && customEffectsEnabled ? Color.clear : backgroundColors.primary)
                         }
                     }
                     .animation(.default, value: store.elements)

@@ -14,6 +14,8 @@ import SFSafeSymbols
 
 @ViewAction(for: DeviceTypeFeature.self)
 public struct DeviceTypeScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     @Perception.Bindable public var store: StoreOf<DeviceTypeFeature>
     @Environment(\.tintColor) private var tintColor
@@ -29,7 +31,7 @@ public struct DeviceTypeScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     DevDBBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -376,11 +378,13 @@ public struct DeviceTypeScreen: View {
 }
 
 private struct DevDBGlassSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
     var rounded = false
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             if rounded {
                 RoundedRectangle(cornerRadius: 24)
                     .fill(.clear)

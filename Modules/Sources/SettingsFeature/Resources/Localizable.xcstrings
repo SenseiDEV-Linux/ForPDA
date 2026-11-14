@@ -1,6 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Glass and blur" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стекло и размытие"
+          }
+        }
+      }
+    },
     "About app" : {
       "localizations" : {
         "ru" : {

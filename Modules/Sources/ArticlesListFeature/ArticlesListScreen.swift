@@ -13,6 +13,8 @@ import SFSafeSymbols
 import NukeUI
 
 public struct ArticlesListScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -34,7 +36,7 @@ public struct ArticlesListScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if #available(iOS 26.0, *), case let .loaded(articles) = store.viewState,
+                if #available(iOS 26.0, *), customEffectsEnabled, case let .loaded(articles) = store.viewState,
                    let imageURL = articles.first?.imageUrl {
                     BlurredFeedBackground(imageURL: imageURL)
                 }
@@ -123,7 +125,7 @@ public struct ArticlesListScreen: View {
                     .padding(.bottom, 14)
                     .listRowSeparator(.hidden)
                     .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    .listRowBackground(isLiquidGlass ? Color.clear : backgroundColors.primary)
+                    .listRowBackground(isLiquidGlass && customEffectsEnabled ? Color.clear : backgroundColors.primary)
                     .onAppear {
                         guard let index = store.articles.firstIndex(of: article) else { return }
                         if store.articles.count - 5 == index {
@@ -140,7 +142,7 @@ public struct ArticlesListScreen: View {
                     .padding(.bottom, 20)
                     .frame(maxWidth: .infinity)
                     .listRowSeparator(.hidden)
-                    .listRowBackground(isLiquidGlass ? Color.clear : backgroundColors.primary)
+                    .listRowBackground(isLiquidGlass && customEffectsEnabled ? Color.clear : backgroundColors.primary)
             }
         }
         .listStyle(.plain)

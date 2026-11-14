@@ -47,6 +47,8 @@ struct CommentsView: View {
 // MARK: - Comment View
 
 struct CommentView: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -136,7 +138,7 @@ struct CommentView: View {
             ) { store in
                 ReputationChangeView(store: store)
             }
-            .background(isLiquidGlass ? Color.clear : backgroundColors.primary)
+            .background(isLiquidGlass && customEffectsEnabled ? Color.clear : backgroundColors.primary)
             .alert($store.scope(\.$alert, action: \.alert))
             .task {
                 await store.send(.onTask).finish()

@@ -17,6 +17,8 @@ import BBPanelFeature
 
 @ViewAction(for: QMSFeature.self)
 public struct QMSScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -44,7 +46,7 @@ public struct QMSScreen: View {
             backgroundColors.primary
                 .ignoresSafeArea()
 
-            if isLiquidGlass {
+            if isLiquidGlass && customEffectsEnabled {
                 QMSBlurredBackdrop(tint: tintColor)
             }
 
@@ -148,8 +150,8 @@ public struct QMSScreen: View {
     private var qmsChatTheme: ChatTheme {
         ChatTheme(
             colors: ChatTheme.Colors(
-                mainBG: isLiquidGlass ? .clear : backgroundColors.primary,
-                messageMyBG: tintColor.opacity(isLiquidGlass ? 0.20 : 0.16),
+                mainBG: isLiquidGlass && customEffectsEnabled ? .clear : backgroundColors.primary,
+                messageMyBG: customEffectsEnabled ? tintColor.opacity(isLiquidGlass ? 0.20 : 0.16) : Color(.Background.quaternary),
                 messageMyText: Color(.Labels.primary),
                 messageMyTimeText: Color(.systemGray),
                 messageFriendBG: Color(.Background.quaternary),
@@ -292,14 +294,16 @@ public struct QMSScreen: View {
 
 // Liquid Glass on iOS 26, with a translucent material on earlier systems.
 private struct QMSComposerGlass<GlassShape: Shape>: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let shape: GlassShape
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             shape
                 .fill(.clear)
                 .glassEffect(.regular, in: shape)
-        } else {
+        } else if customEffectsEnabled {
             shape
                 .fill(.thinMaterial)
                 .overlay { shape.stroke(Color.primary.opacity(0.08), lineWidth: 1) }

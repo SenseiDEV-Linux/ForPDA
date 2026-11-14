@@ -12,6 +12,8 @@ import SFSafeSymbols
 import Models
 
 public struct SettingsScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
         
     @Perception.Bindable public var store: StoreOf<SettingsFeature>
     @Environment(\.tintColor) private var tintColor
@@ -28,7 +30,7 @@ public struct SettingsScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     SettingsBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -193,7 +195,7 @@ public struct SettingsScreen: View {
         }
         // TODO: Wacky animation
         .background(
-            (isLiquidGlass ? Color.clear : backgroundColors.primary)
+            (isLiquidGlass && customEffectsEnabled ? Color.clear : backgroundColors.primary)
                 .animation(.default, value: colorScheme)
         )
         .listRowBackground(SettingsGlassSurface(fallback: backgroundColors.primary))
@@ -245,6 +247,8 @@ public struct SettingsScreen: View {
     @ViewBuilder
     private func BasicSection() -> some View {
         Section {
+            Row(symbol: .sparkles, title: "Glass and blur", type: .toggle, toggle: $customEffectsEnabled)
+
             Row(symbol: ._1Circle, title: "Starting page", type: .startPagePicker)
             
             Row(symbol: .paintpalette, title: "Background color", type: .backgroundPicker)
@@ -405,10 +409,16 @@ extension AppTintColor {
 
 // Shared by settings screens; older iOS keeps the original opaque surfaces.
 struct SettingsGlassSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
 
+    init(fallback: Color) {
+        self.fallback = fallback
+    }
+
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             Rectangle()
                 .fill(.clear)
                 .glassEffect(.regular, in: Rectangle())

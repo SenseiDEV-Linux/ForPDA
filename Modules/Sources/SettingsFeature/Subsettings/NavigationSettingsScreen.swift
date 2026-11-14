@@ -12,6 +12,8 @@ import Models
 
 @ViewAction(for: NavigationSettingsFeature.self)
 public struct NavigationSettingsScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -33,7 +35,7 @@ public struct NavigationSettingsScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     SettingsBlurredBackdrop(tint: tintColor)
                 }
                 

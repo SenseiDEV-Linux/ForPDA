@@ -20,6 +20,8 @@ import TopicEditFeature
 
 @ViewAction(for: ForumFeature.self)
 public struct ForumScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -51,7 +53,7 @@ public struct ForumScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     ForumBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -158,7 +160,7 @@ public struct ForumScreen: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .background {
-            if #available(iOS 26, *) {
+            if #available(iOS 26, *), customEffectsEnabled {
                 ConcentricRectangle()
                     .fill(.clear)
                     .glassEffect(.regular, in: ConcentricRectangle())
@@ -723,10 +725,12 @@ extension Forum {
 
 // The grouped list still owns its corners, separators and interactive rows.
 private struct ForumGlassSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             Rectangle()
                 .fill(.clear)
                 .glassEffect(.regular, in: Rectangle())

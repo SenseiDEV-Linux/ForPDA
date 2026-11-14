@@ -12,6 +12,8 @@ import SharedUI
 
 @ViewAction(for: ForumsListFeature.self)
 public struct ForumsListScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -33,7 +35,7 @@ public struct ForumsListScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     ForumBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -128,10 +130,12 @@ public struct ForumsListScreen: View {
 
 // Keep the native grouped list, including its separators and section behaviour.
 private struct ForumListSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             Rectangle()
                 .fill(.clear)
                 .glassEffect(.regular, in: Rectangle())

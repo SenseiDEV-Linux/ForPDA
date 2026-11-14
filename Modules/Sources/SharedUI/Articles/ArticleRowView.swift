@@ -10,6 +10,8 @@ import SkeletonUI
 import NukeUI
 
 public struct ArticleRowView: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Enums
     
@@ -134,12 +136,12 @@ public struct ArticleRowView: View {
     }
 
     private var glassEnabled: Bool {
-        usesGlass && isLiquidGlass
+        usesGlass && customEffectsEnabled && isLiquidGlass
     }
 
     @ViewBuilder
     private func CardBackground() -> some View {
-        if #available(iOS 26.0, *), usesGlass {
+        if #available(iOS 26.0, *), usesGlass, customEffectsEnabled {
             RoundedRectangle(cornerRadius: 24)
                 .fill(.clear)
                 .glassEffect(.regular, in: .rect(cornerRadius: 24))

@@ -24,6 +24,8 @@ import UserPunishmentFeature
 
 @ViewAction(for: TopicFeature.self)
 public struct TopicScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -86,7 +88,7 @@ public struct TopicScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     TopicReadingBackdrop(tint: tintColor)
                 }
                 
@@ -362,9 +364,9 @@ public struct TopicScreen: View {
                 PollView(poll: poll, onVoteButtonTapped: { selections in
                     send(.topicPollVoteButtonTapped(selections))
                 })
-                .padding(.top, store.shouldShowTopicHatButton || isLiquidGlass ? 16 : 0)
+                .padding(.top, store.shouldShowTopicHatButton || (isLiquidGlass && customEffectsEnabled) ? 16 : 0)
                 .background { TopicGlassSurface() }
-                .padding(.horizontal, isLiquidGlass ? 12 : 0)
+                .padding(.horizontal, (isLiquidGlass && customEffectsEnabled) ? 12 : 0)
             }
             
             PostSeparator()
@@ -385,10 +387,10 @@ public struct TopicScreen: View {
                     VStack(spacing: 0) {
                         Post(post)
                             .padding(.horizontal, 16)
-                            .padding(.vertical, isLiquidGlass ? 16 : 0)
+                            .padding(.vertical, (isLiquidGlass && customEffectsEnabled) ? 16 : 0)
                             .background { TopicGlassSurface() }
-                            .padding(.horizontal, isLiquidGlass ? 12 : 0)
-                            .padding(.bottom, isLiquidGlass ? 0 : 16)
+                            .padding(.horizontal, (isLiquidGlass && customEffectsEnabled) ? 12 : 0)
+                            .padding(.bottom, (isLiquidGlass && customEffectsEnabled) ? 0 : 16)
                         
                         PostSeparator()
                     }
@@ -405,9 +407,9 @@ public struct TopicScreen: View {
                                 .fill(maskColor)
                                 .frame(
                                     // + LazyVStack spacing - Separator height
-                                    height: isLiquidGlass ? proxy.size.height : proxy.size.height + 16 - 10
+                                    height: (isLiquidGlass && customEffectsEnabled) ? proxy.size.height : proxy.size.height + 16 - 10
                                 )
-                                .padding(.top, isLiquidGlass ? 0 : -16) // LazyVStack spacing
+                                .padding(.top, (isLiquidGlass && customEffectsEnabled) ? 0 : -16) // LazyVStack spacing
                                 .allowsHitTesting(false)
                         }
                     }
@@ -419,8 +421,8 @@ public struct TopicScreen: View {
     @ViewBuilder
     private func PostSeparator() -> some View {
         Rectangle()
-            .foregroundStyle(isLiquidGlass ? Color.clear : backgroundColors.tertiary)
-            .frame(height: isLiquidGlass ? 0 : 10)
+            .foregroundStyle((isLiquidGlass && customEffectsEnabled) ? Color.clear : backgroundColors.tertiary)
+            .frame(height: (isLiquidGlass && customEffectsEnabled) ? 0 : 10)
     }
     
     // MARK: - Post
@@ -851,8 +853,10 @@ private struct TopicReadingBackdrop: View {
 
 // Cards leave post controls and text selection in the original view hierarchy.
 private struct TopicGlassSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             RoundedRectangle(cornerRadius: 24)
                 .fill(.clear)
                 .glassEffect(.regular, in: .rect(cornerRadius: 24))

@@ -13,6 +13,8 @@ import SFSafeSymbols
 
 @ViewAction(for: AuthFeature.self)
 public struct AuthScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -41,7 +43,7 @@ public struct AuthScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     AuthBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -146,7 +148,7 @@ public struct AuthScreen: View {
                             .font(.body)
                             .frame(maxWidth: .infinity, maxHeight: 48)
                     }
-                    ._glassProminentButtonStyle()
+                    ._authGlassButtonStyle(enabled: customEffectsEnabled)
                     .frame(maxHeight: 48)
                     .disabled(store.isLoginButtonDisabled)
                     .padding(.horizontal, 16)
@@ -247,7 +249,7 @@ public struct AuthScreen: View {
                 AuthFieldSurface(fallback: backgroundColors.tertiary)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: isLiquidGlass ? 22 : 14)
+                RoundedRectangle(cornerRadius: isLiquidGlass && customEffectsEnabled ? 22 : 14)
                     .stroke($focus.wrappedValue == focusEqual ? tintColor : Color(.Separator.primary), lineWidth: 0.67)
             }
             
@@ -329,10 +331,12 @@ public struct AuthScreen: View {
 
 // Preserve the existing field surface on iOS versions without Liquid Glass.
 private struct AuthFieldSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             RoundedRectangle(cornerRadius: 22)
                 .fill(.clear)
                 .glassEffect(.regular, in: .rect(cornerRadius: 22))
@@ -364,5 +368,16 @@ private struct AuthBlurredBackdrop: View {
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func _authGlassButtonStyle(enabled: Bool) -> some View {
+        if #available(iOS 26.0, *), enabled {
+            self.buttonStyle(.glassProminent)
+        } else {
+            self.buttonStyle(.borderedProminent)
+        }
     }
 }

@@ -264,6 +264,9 @@ public struct TopicView: View {
 // MARK: - Spoiler View
 
 struct SpoilerView: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+    @Environment(\.backgroundColors) private var backgroundColors
+
     
     @State private var isExpanded = false
     
@@ -357,12 +360,17 @@ struct SpoilerView: View {
             }
         }
         .background {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.regularMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color(.Separator.secondary), lineWidth: 1)
-                }
+            if customEffectsEnabled {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.regularMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color(.Separator.secondary), lineWidth: 1)
+                    }
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
+            }
         }
         .animation(.default, value: isExpanded)
     }
@@ -371,6 +379,9 @@ struct SpoilerView: View {
 // MARK: - Quote View
 
 struct QuoteView: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+    @Environment(\.backgroundColors) private var backgroundColors
+
     
     let types: [UITopicType]
     let nestLevel: Int
@@ -484,12 +495,17 @@ struct QuoteView: View {
             .padding(12)
         }
         .background {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.regularMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color(.Separator.secondary), lineWidth: 1)
-                }
+            if customEffectsEnabled {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.regularMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color(.Separator.secondary), lineWidth: 1)
+                    }
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
+            }
         }
     }
 }

@@ -15,6 +15,8 @@ import SwiftUI
 
 @ViewAction(for: MoreFeature.self)
 public struct MoreScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -37,7 +39,7 @@ public struct MoreScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     MoreBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -345,10 +347,12 @@ private struct MoreBlurredBackdrop: View {
 
 // Keep native grouped-list behaviour, with the existing surface on older iOS.
 private struct MoreGlassSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             Rectangle()
                 .fill(.clear)
                 .glassEffect(.regular, in: Rectangle())

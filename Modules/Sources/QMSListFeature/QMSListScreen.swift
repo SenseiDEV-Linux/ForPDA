@@ -14,6 +14,8 @@ import Models
 
 @ViewAction(for: QMSListFeature.self)
 public struct QMSListScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -37,7 +39,7 @@ public struct QMSListScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     QMSBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -437,13 +439,16 @@ public struct QMSListScreen: View {
 
 // A separate background keeps List's disclosure, badges and context menus native.
 private struct QMSListGlassBackground: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+    @Environment(\.backgroundColors) private var fallbackColors
+
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             RoundedRectangle(cornerRadius: 22)
                 .fill(.clear)
                 .glassEffect(.regular, in: .rect(cornerRadius: 22))
                 .padding(.vertical, 2)
-        } else {
+        } else if customEffectsEnabled {
             RoundedRectangle(cornerRadius: 16)
                 .fill(.thinMaterial)
                 .overlay {
@@ -451,6 +456,8 @@ private struct QMSListGlassBackground: View {
                         .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                 }
                 .padding(.vertical, 2)
+        } else {
+            fallbackColors.tertiary
         }
     }
 }

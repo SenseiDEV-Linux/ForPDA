@@ -14,6 +14,8 @@ import Models
 
 @ViewAction(for: MentionsFeature.self)
 public struct MentionsScreen: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     
     // MARK: - Properties
     
@@ -45,7 +47,7 @@ public struct MentionsScreen: View {
                 backgroundColors.primary
                     .ignoresSafeArea()
 
-                if isLiquidGlass {
+                if isLiquidGlass && customEffectsEnabled {
                     MentionsBlurredBackdrop(tint: tintColor)
                 }
                 
@@ -182,10 +184,12 @@ private extension Date {
 
 // Preserve list grouping and the existing surface on earlier iOS versions.
 private struct MentionsGlassSurface: View {
+    @AppStorage("forpda.customGlassAndBlur") private var customEffectsEnabled = true
+
     let fallback: Color
 
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), customEffectsEnabled {
             Rectangle()
                 .fill(.clear)
                 .glassEffect(.regular, in: Rectangle())
