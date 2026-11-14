@@ -76,9 +76,12 @@ public struct BBPanelView: View {
                     })
                 }
                 .background {
-                    RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
-                        .fill(backgroundColors.primary)
+                    if !isLiquidGlass {
+                        RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
+                            .fill(backgroundColors.primary)
+                    }
                 }
+                .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14)
                 .onAppear {
                     send(.onAppear)
                 }
@@ -160,8 +163,10 @@ public struct BBPanelView: View {
     @ViewBuilder
     private func ColorsGrid() -> some View {
         ZStack {
-            backgroundColors.primary
-                .ignoresSafeArea()
+            if !isLiquidGlass {
+                backgroundColors.primary
+                    .ignoresSafeArea()
+            }
             
             VStack(spacing: 12) {
                 HStack {
@@ -249,9 +254,12 @@ public struct BBPanelView: View {
         .padding(.top, 16)
         .padding(.horizontal, 16)
         .background {
-            RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
-                .fill(backgroundColors.primary)
+            if !isLiquidGlass {
+                RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
+                    .fill(backgroundColors.primary)
+            }
         }
+        .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14)
         .frame(height: 190)
         .shadow(color: Color(.Labels.primary).opacity(0.15), radius: 10, y: 4)
     }

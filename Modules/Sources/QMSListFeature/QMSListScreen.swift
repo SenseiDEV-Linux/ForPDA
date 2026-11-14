@@ -53,7 +53,7 @@ public struct QMSListScreen: View {
                                                     }
                                                 }
                                         }
-                                        .listRowBackground(backgroundColors.tertiary)
+                                        .liquidRowBackground(fallback: backgroundColors.tertiary)
                                         .scaleEffect(store.goTo == user.id ? scrollScale : 1)
                                         .id(user.id)
                                     }
@@ -81,7 +81,7 @@ public struct QMSListScreen: View {
                         QMSList {
                             ForEach(0..<8) { _ in
                                 UserRow(.placeholder)
-                                    .listRowBackground(backgroundColors.tertiary)
+                                    .liquidRowBackground(fallback: backgroundColors.tertiary)
                                     .redacted(if: true)
                             }
                         }
@@ -213,7 +213,7 @@ public struct QMSListScreen: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .badge(user.unreadCount)
         ._badgeProminence(.increased)
     }
@@ -306,7 +306,7 @@ public struct QMSListScreen: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .badge(chat.unreadCount)
         ._badgeProminence(.increased)
         .contextMenu {
@@ -356,7 +356,7 @@ public struct QMSListScreen: View {
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Helpers

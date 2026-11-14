@@ -76,7 +76,7 @@ public struct NavigationSettingsScreen: View {
                         }
                     }
                     .tint(tintColor)
-                    .listRowBackground(backgroundColors.tertiary)
+                    .liquidRowBackground(fallback: backgroundColors.tertiary)
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     .frame(minHeight: 60)
                 }

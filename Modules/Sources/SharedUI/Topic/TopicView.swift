@@ -358,10 +358,13 @@ struct SpoilerView: View {
                 .padding(12)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
-        )
+        .background {
+            if !isLiquidGlass {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 12)
         .animation(.default, value: isExpanded)
     }
 }
@@ -483,10 +486,13 @@ struct QuoteView: View {
             }
             .padding(12)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
-        )
+        .background {
+            if !isLiquidGlass {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 12)
     }
 }
 
@@ -560,15 +566,18 @@ struct CodeView: View {
                 }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
-                .overlay(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color(.Main.greyAlpha))
-                        .frame(width: 4)
-                }
-        )
+        .background {
+            if !isLiquidGlass {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
+                    .overlay(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color(.Main.greyAlpha))
+                            .frame(width: 4)
+                    }
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 12)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .animation(.default, value: isExpanded)
     }
@@ -682,10 +691,13 @@ struct HideView: View {
                     }
                     .padding(12)
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
-                )
+                .background {
+                    if !isLiquidGlass {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
+                    }
+                }
+                .liquidGlass(.regular, cornerRadius: 12)
             }
         }
         .animation(.default, value: isShown)
@@ -739,15 +751,18 @@ struct NoticeView: View {
             }
             .padding(12)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
-                .overlay(alignment: .leading) {
-                    Rectangle()
-                        .fill(info.color)
-                        .frame(width: 4)
-                }
-        )
+        .background {
+            if !isLiquidGlass {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
+                    .overlay(alignment: .leading) {
+                        Rectangle()
+                            .fill(info.color)
+                            .frame(width: 4)
+                    }
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 12)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

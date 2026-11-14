@@ -378,6 +378,13 @@ public struct TopicScreen: View {
                 } else {
                     VStack(spacing: 0) {
                         Post(post)
+                            .padding(isLiquidGlass ? 16 : 0)
+                            .background {
+                                if !isLiquidGlass {
+                                    backgroundColors.primary
+                                }
+                            }
+                            .liquidGlass(.regular, cornerRadius: 20)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 16)
                         

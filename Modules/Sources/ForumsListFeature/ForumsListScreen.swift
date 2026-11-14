@@ -56,7 +56,7 @@ public struct ForumsListScreen: View {
                             } header: {
                                 Header(forumRow: forumRow)
                             }
-                            .listRowBackground(backgroundColors.tertiary)
+                            .liquidRowBackground(fallback: backgroundColors.tertiary)
                         }
                     }
                     .scrollContentBackground(.hidden)

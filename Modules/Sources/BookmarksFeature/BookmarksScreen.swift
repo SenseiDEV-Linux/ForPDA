@@ -42,7 +42,7 @@ public struct BookmarksScreen: View {
             }
             .navigationTitle(Text("Bookmarks", bundle: .module))
             ._toolbarTitleDisplayMode(.large)
-            .toolbarBackground(backgroundColors.primary, for: .navigationBar)
+            .toolbarBackground(isLiquidGlass ? Color.clear : backgroundColors.primary, for: .navigationBar)
             .onAppear {
                 store.send(.onAppear)
             }

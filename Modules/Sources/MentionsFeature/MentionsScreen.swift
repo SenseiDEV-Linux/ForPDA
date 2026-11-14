@@ -61,7 +61,7 @@ public struct MentionsScreen: View {
                                 }
                             )
                         }
-                        .listRowBackground(backgroundColors.tertiary)
+                        .liquidRowBackground(fallback: backgroundColors.tertiary)
                         
                         Navigation()
                     }
@@ -102,7 +102,7 @@ public struct MentionsScreen: View {
     private func Navigation() -> some View {
         if shouldShowInlineNavigation {
             PageNavigation(store: store.scope(\.pageNavigation, action: \.pageNavigation))
-                .listRowBackground(backgroundColors.primary)
+                .liquidRowBackground(fallback: backgroundColors.primary)
         }
     }
     

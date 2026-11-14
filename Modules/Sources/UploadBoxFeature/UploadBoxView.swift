@@ -147,11 +147,18 @@ public struct UploadBoxView: View {
                         .padding(.leading, 10)
                         .padding(.trailing, 5)
                         .padding(.vertical, 5)
-                        .background(backgroundColors.tertiary, in: Capsule())
+                        .background {
+                            if !isLiquidGlass {
+                                backgroundColors.tertiary
+                                    .clipShape(Capsule())
+                            }
+                        }
                         .overlay {
                             Capsule()
                                 .stroke(Color(.Separator.secondary), lineWidth: 1)
+                                .opacity(isLiquidGlass ? 0.5 : 1)
                         }
+                        .liquidGlassCapsule(isInteractive: false)
                     }
                 }
                 .padding(.horizontal, 4)
@@ -179,11 +186,14 @@ public struct UploadBoxView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 144)
             .background {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(backgroundColors.tertiary)
+                if !isLiquidGlass {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(backgroundColors.tertiary)
+                }
             }
+            .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14)
             .overlay {
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
             }
         }
@@ -205,8 +215,13 @@ public struct UploadBoxView: View {
                 }
                 .frame(minWidth: 48, maxWidth: 48, minHeight: 144)
                 .padding(.horizontal, 12)
-                .background(backgroundColors.tertiary)
+                .background {
+                    if !isLiquidGlass {
+                        backgroundColors.tertiary
+                    }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                .liquidGlass(.regular, cornerRadius: 14)
                 .disabled(store.isAnyFileUploading)
                 
                 ForEach(store.files, id: \.id) { file in

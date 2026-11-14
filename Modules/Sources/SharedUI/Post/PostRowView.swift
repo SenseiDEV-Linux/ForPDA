@@ -88,10 +88,13 @@ public struct PostRowView: View {
                             .foregroundStyle(Color(.Labels.secondary))
                             .padding(.vertical, 4)
                             .padding(.horizontal, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .foregroundStyle(backgroundColors.tertiary)
-                            )
+                            .background {
+                                if !isLiquidGlass {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .foregroundStyle(backgroundColors.tertiary)
+                                }
+                            }
+                            .liquidGlass(.regular, cornerRadius: 6)
                     }
                     .onTapGesture {
                         action(.userTapped)
@@ -227,10 +230,13 @@ public struct PostRowView: View {
             .foregroundStyle(Color(.Labels.teritary))
             .padding(.vertical, 2)
             .padding(.horizontal, 6)
-            .background(
-                backgroundColors.tertiary
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            )
+            .background {
+                if !isLiquidGlass {
+                    backgroundColors.tertiary
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+            .liquidGlass(.regular, cornerRadius: 10)
     }
     
     // MARK: - Context Menu

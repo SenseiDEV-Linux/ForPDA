@@ -31,10 +31,12 @@ struct CommentsView: View {
                     .padding(.vertical, 24)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                LazyVStack(spacing: 0) {
+                LazyVStack(spacing: isLiquidGlass ? 12 : 0) {
                     ForEach(Array(store.scope(\.comments, action: \.comments))) { store in
                         WithPerceptionTracking {
                             CommentView(store: store)
+                                .padding(isLiquidGlass ? 12 : 0)
+                                .liquidGlass(.regular, cornerRadius: 20)
                         }
                     }
                 }
@@ -136,7 +138,11 @@ struct CommentView: View {
             ) { store in
                 ReputationChangeView(store: store)
             }
-            .background(backgroundColors.primary)
+            .background {
+                if !isLiquidGlass {
+                    backgroundColors.primary
+                }
+            }
             .alert($store.scope(\.$alert, action: \.alert))
             .task {
                 await store.send(.onTask).finish()

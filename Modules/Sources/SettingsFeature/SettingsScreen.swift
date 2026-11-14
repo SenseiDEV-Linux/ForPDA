@@ -264,7 +264,7 @@ public struct SettingsScreen: View {
         } header: {
             Header(title: "Basic")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Advanced Section
@@ -300,7 +300,7 @@ public struct SettingsScreen: View {
                     #endif
                 }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - About App Section
@@ -312,7 +312,7 @@ public struct SettingsScreen: View {
         } header: {
             Header(title: "About app")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
 }
 

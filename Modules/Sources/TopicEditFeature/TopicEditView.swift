@@ -112,7 +112,11 @@ public struct TopicEditView: View {
             .frame(height: 48)
             .padding(.vertical, 8)
             .padding(.horizontal, 16)
-            .background(backgroundColors.primary)
+            .background {
+                if !isLiquidGlass {
+                    backgroundColors.primary
+                }
+            }
         }
     }
     

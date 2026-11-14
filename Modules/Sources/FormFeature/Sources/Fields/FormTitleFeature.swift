@@ -88,9 +88,12 @@ struct FormTitleRow: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 12)
                 .background {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(backgroundColors.tertiary)
+                    if !isLiquidGlass {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(backgroundColors.tertiary)
+                    }
                 }
+                .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14, isInteractive: true)
                 .onAppear {
                     send(.onAppear)
                 }

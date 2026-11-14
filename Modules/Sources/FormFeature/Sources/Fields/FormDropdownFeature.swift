@@ -116,16 +116,20 @@ struct FormDropdownRow: View {
                                 .tint(tintColor)
                         }
                         .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
-                                .fill(backgroundColors.tertiary)
-                        )
+                        .background {
+                            if !isLiquidGlass {
+                                RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
+                                    .fill(backgroundColors.tertiary)
+                            }
+                        }
+                        .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14, isInteractive: true)
                         .overlay {
                             RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
                                 .strokeBorder(Color(.Separator.primary))
+                                .opacity(isLiquidGlass ? 0.5 : 1)
                         }
                     }
-                    .listRowBackground(backgroundColors.tertiary)
+                    .liquidRowBackground(fallback: backgroundColors.tertiary)
                 }
             }
         }

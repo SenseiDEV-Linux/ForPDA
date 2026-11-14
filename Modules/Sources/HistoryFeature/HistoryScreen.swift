@@ -95,7 +95,7 @@ public struct HistoryScreen: View {
     private func Navigation() -> some View {
         if shouldShowInlineNavigation {
             PageNavigation(store: store.scope(\.pageNavigation, action: \.pageNavigation))
-                .listRowBackground(backgroundColors.primary)
+                .liquidRowBackground(fallback: backgroundColors.primary)
         }
     }
     
@@ -118,7 +118,7 @@ public struct HistoryScreen: View {
         } header: {
             Header(title: history.seenDate.formattedDateOnly())
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Empty History

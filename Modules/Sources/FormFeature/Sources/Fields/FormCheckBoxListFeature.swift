@@ -124,9 +124,12 @@ struct FormCheckBoxListRow: View {
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(backgroundColors.tertiary)
+                    if !isLiquidGlass {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(backgroundColors.tertiary)
+                    }
                 }
+                .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14)
             }
         }
     }

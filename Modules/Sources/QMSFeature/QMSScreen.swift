@@ -224,6 +224,7 @@ public struct QMSScreen: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .liquidGlassCircle()
                 .accessibilityLabel(Text("qms.attachments.add", bundle: .module))
                 .disabled(store.isSending || store.upload.isAnyFileUploading)
                 

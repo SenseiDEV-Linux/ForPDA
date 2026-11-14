@@ -260,15 +260,11 @@ public struct FavoritesScreen: View {
                     }
                 }
                 .listRowBackground(
-                    backgroundColors.tertiary
-                        .clipShape(
-                            .rect(
-                                topLeadingRadius: index == 0 ? radius : 0,
-                                bottomLeadingRadius: index == favorites.count - 1 ? radius : 0,
-                                bottomTrailingRadius: index == favorites.count - 1 ? radius : 0,
-                                topTrailingRadius: index == 0 ? radius : 0
-                            )
-                        )
+                    LiquidGlassGroupedRowBackground(
+                        position: .of(index, count: favorites.count),
+                        fallbackColor: backgroundColors.tertiary,
+                        radius: radius
+                    )
                 )
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -283,7 +279,7 @@ public struct FavoritesScreen: View {
                        : LocalizedStringKey("Topics / Forums"))
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Navigation

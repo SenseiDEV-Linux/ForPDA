@@ -118,10 +118,13 @@ public struct TicketStatusHistoryView: View {
         .foregroundStyle(Color(.Labels.teritary))
         .padding(.vertical, 2)
         .padding(.horizontal, 6)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: isLiquidGlass ? 10 : 6))
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+                    .clipShape(RoundedRectangle(cornerRadius: isLiquidGlass ? 10 : 6))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 10 : 6)
     }
     
     // MARK: - Close Button
@@ -141,7 +144,11 @@ public struct TicketStatusHistoryView: View {
         .frame(height: 48)
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
-        .background(backgroundColors.primary)
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.primary
+            }
+        }
     }
     
     // MARK: - Loading Error

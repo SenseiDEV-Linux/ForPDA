@@ -69,12 +69,20 @@ public struct Field<T: Hashable, BBPanel: View>: View {
         .foregroundStyle(Color(.Labels.primary))
         .frame(minHeight: minHeight, alignment: .top)
         .background {
-            RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
-                .fill(backgroundColors.tertiary)
+            if !isLiquidGlass {
+                RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
+                    .fill(backgroundColors.tertiary)
+            }
         }
+        .liquidGlass(
+            .regular,
+            cornerRadius: isLiquidGlass ? 28 : 14,
+            isInteractive: true
+        )
         .overlay {
             RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
                 .stroke($focus.wrappedValue == focusEqual ? tintColor : Color(.Separator.primary), lineWidth: 1)
+                .opacity(isLiquidGlass ? 0.6 : 1)
         }
         .onTapGesture {
             focus = focusEqual
@@ -166,12 +174,20 @@ public struct FieldContainer<F: Hashable, Content: View>: View {
         .focused($focus, equals: focusEqual)
         .foregroundStyle(Color(.Labels.primary))
         .background {
-            RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
-                .fill(backgroundColors.tertiary)
+            if !isLiquidGlass {
+                RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
+                    .fill(backgroundColors.tertiary)
+            }
         }
+        .liquidGlass(
+            .regular,
+            cornerRadius: isLiquidGlass ? 28 : 14,
+            isInteractive: true
+        )
         .overlay {
             RoundedRectangle(cornerRadius: isLiquidGlass ? 28 : 14)
                 .stroke($focus.wrappedValue == focusEqual ? tintColor : Color(.Separator.primary), lineWidth: 1)
+                .opacity(isLiquidGlass ? 0.6 : 1)
         }
         .onTapGesture {
             focus = focusEqual

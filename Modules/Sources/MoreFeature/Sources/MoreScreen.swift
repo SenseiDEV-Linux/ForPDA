@@ -75,7 +75,7 @@ public struct MoreScreen: View {
         Section {
             ProfileButton()
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Log In or Profile Button
@@ -212,7 +212,7 @@ public struct MoreScreen: View {
                  }
              }
          }
-         .listRowBackground(backgroundColors.tertiary)
+         .liquidRowBackground(fallback: backgroundColors.tertiary)
      }
     
     // MARK: - Settings Section
@@ -224,7 +224,7 @@ public struct MoreScreen: View {
                 send(.settingsButtonTapped)
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Links Section
@@ -248,7 +248,7 @@ public struct MoreScreen: View {
                 send(.githubButtonTapped)
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Logout Section
@@ -262,7 +262,7 @@ public struct MoreScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
     }
     
     // MARK: - Row

@@ -285,7 +285,7 @@ public struct ArticleScreen: View {
             
             Rectangle()
                 .frame(maxWidth: .infinity, maxHeight: 16)
-                .foregroundStyle(backgroundColors.tertiary)
+                .foregroundStyle(isLiquidGlass ? Color.clear : backgroundColors.tertiary)
             
             CommentsView(store: store)
                 .modifier(ScrollVisibility(threshold: 0.01, isVisible: $isCommentsViewVisible))

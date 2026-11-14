@@ -87,7 +87,7 @@ public struct SearchScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -256,7 +256,11 @@ public struct SearchScreen: View {
                     }
                     .padding(.vertical, 16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(backgroundColors.tertiary)
+                    .background {
+                        if !isLiquidGlass {
+                            backgroundColors.tertiary
+                        }
+                    }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

@@ -60,11 +60,16 @@ struct SortView: View {
                                 .padding(.trailing, 11)
                         }
                         .frame(height: 60)
-                        .background(backgroundColors.tertiary)
+                        .background {
+                            if !isLiquidGlass {
+                                backgroundColors.tertiary
+                            }
+                        }
                         .cornerRadius(10)
+                        .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 10)
                     }
                 }
-                .listRowBackground(backgroundColors.tertiary)
+                .liquidRowBackground(fallback: backgroundColors.tertiary)
                 .padding(.bottom, 28)
                 
                 Row("In reverse order", value: $store.isReverseOrder)
@@ -117,11 +122,13 @@ struct SortView: View {
                                 .fontWeight(.bold)
                                 .foregroundStyle(Color(.Labels.teritary))
                                 .frame(width: 30, height: 30)
-                                .background(
-                                    Circle()
-                                        .fill(Color(.Background.quaternary))
-                                        .clipShape(Circle())
-                                )
+                                .background {
+                                    if !isLiquidGlass {
+                                        Circle()
+                                            .fill(Color(.Background.quaternary))
+                                    }
+                                }
+                                .liquidGlassCircle(isInteractive: true)
                         }
                     }
                 }

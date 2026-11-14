@@ -46,7 +46,7 @@ public struct ListTagBuilderView: View {
                             .font(.footnote)
                             .foregroundStyle(Color(.Labels.teritary))
                     }
-                    .listRowBackground(backgroundColors.tertiary)
+                    .liquidRowBackground(fallback: backgroundColors.tertiary)
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 }
                 .scrollContentBackground(.hidden)

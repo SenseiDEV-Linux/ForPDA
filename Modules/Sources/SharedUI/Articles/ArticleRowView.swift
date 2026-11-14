@@ -91,15 +91,18 @@ public struct ArticleRowView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 14)
         }
-        .background(
-            backgroundColors.primary
-//                .matchedGeometryEffect(id: "background\(id)", in: namespace)
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.primary
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.Separator.primary), lineWidth: isShort ? 0 : 0.67)
+                .opacity(isLiquidGlass ? 0.6 : 1)
         )
+        .liquidGlass(.regular, cornerRadius: 16)
     }
     
     // MARK: - Short Row
@@ -124,9 +127,12 @@ public struct ArticleRowView: View {
                 }
             }
         }
-        .background(
-            backgroundColors.primary
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.primary
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 16)
     }
     
     // MARK: - Image

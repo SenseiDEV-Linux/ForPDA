@@ -70,7 +70,7 @@ public struct DeviceTypeScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -103,7 +103,7 @@ public struct DeviceTypeScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -134,7 +134,7 @@ public struct DeviceTypeScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -174,10 +174,13 @@ public struct DeviceTypeScreen: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 19)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 10)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
@@ -301,10 +304,13 @@ public struct DeviceTypeScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(12)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 10)
     }
     
     // MARK: - Helpers

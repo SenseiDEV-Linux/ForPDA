@@ -111,10 +111,16 @@ public struct DeviceSpecificationsScreen: View {
         ._buttonStyle(myDevice ? .borderedProminent : .bordered)
         .tint(tintColor)
         .disabled(store.isMyDeviceLoading || store.isDevicesLimit)
-        .background(backgroundColors.primary, in: Capsule())
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.primary
+                    .clipShape(Capsule())
+            }
+        }
         .frame(height: 48)
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
+        .liquidGlassCapsule(isInteractive: false)
         .animation(.default, value: store.isMyDeviceLoading)
     }
     
@@ -135,10 +141,13 @@ public struct DeviceSpecificationsScreen: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 19)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 10)
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
@@ -193,7 +202,7 @@ public struct DeviceSpecificationsScreen: View {
         } header: {
             SectionHeader(title: spec.title)
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     

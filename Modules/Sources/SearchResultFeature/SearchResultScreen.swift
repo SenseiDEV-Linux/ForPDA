@@ -214,19 +214,29 @@ public struct SearchResultScreen: View {
                     }
                 )
                 .padding(.leading, 16)
-                .background(
-                    backgroundColors.tertiary
-                        .clipShape(
-                            .rect(
-                                topLeadingRadius: index == 0 ? radius : 0,
-                                bottomLeadingRadius: index == store.content.count - 1 ? radius : 0,
-                                bottomTrailingRadius: index == store.content.count - 1 ? radius : 0,
-                                topTrailingRadius: index == 0 ? radius : 0
+                .background {
+                    if !isLiquidGlass {
+                        backgroundColors.tertiary
+                            .clipShape(
+                                .rect(
+                                    topLeadingRadius: index == 0 ? radius : 0,
+                                    bottomLeadingRadius: index == store.content.count - 1 ? radius : 0,
+                                    bottomTrailingRadius: index == store.content.count - 1 ? radius : 0,
+                                    topTrailingRadius: index == 0 ? radius : 0
+                                )
                             )
-                        )
+                    }
+                }
+                .liquidGlassGroupedRow(
+                    radius: radius,
+                    position: .of(index, count: store.content.count)
                 )
             }
-            .background(backgroundColors.primary)
+            .background {
+                if !isLiquidGlass {
+                    backgroundColors.primary
+                }
+            }
         }
     }
     

@@ -154,14 +154,12 @@ public struct ForumScreen: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .background {
-            if #available(iOS 26, *) {
-                ConcentricRectangle()
-                    .fill(backgroundColors.tertiary)
-            } else {
+            if !isLiquidGlass {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(backgroundColors.tertiary)
             }
         }
+        .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14)
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))
         .disabled(store.isMultiSelectionMode)
@@ -246,11 +244,11 @@ public struct ForumScreen: View {
                         }
                         .padding(.leading, supportsMultiSelection && store.isMultiSelectionMode ? 10 : 16)
                         .listRowBackground(
-                            backgroundColors.tertiary
-                                .clipShape(.rect(
-                                    topLeadingRadius: index == 0 ? radius : 0, bottomLeadingRadius: index == topics.count - 1 ? radius : 0,
-                                    bottomTrailingRadius: index == topics.count - 1 ? radius : 0, topTrailingRadius: index == 0 ? radius : 0
-                                ))
+                            LiquidGlassGroupedRowBackground(
+                                position: .of(index, count: topics.count),
+                                fallbackColor: backgroundColors.tertiary,
+                                radius: radius
+                            )
                         )
                     }
                 }
@@ -268,7 +266,7 @@ public struct ForumScreen: View {
                 section: pinned ? .pinnedTopics : .topics
             )
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .disabled(store.isMultiSelectionMode && !supportsMultiSelection)
     }
     
@@ -437,7 +435,7 @@ public struct ForumScreen: View {
         } header: {
             Header(title: "Subforums", section: .subforums)
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .disabled(store.isMultiSelectionMode)
     }
     
@@ -457,7 +455,7 @@ public struct ForumScreen: View {
         } header: {
             Header(title: "Announcements", section: .announcements)
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .disabled(store.isMultiSelectionMode)
     }
     

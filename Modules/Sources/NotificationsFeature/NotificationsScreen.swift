@@ -32,7 +32,7 @@ public struct NotificationsScreen: View {
                             VStack(spacing: 8) {
                                 Text("Notifications are disabled", bundle: .module)
                                     .multilineTextAlignment(.center)
-                                    .listRowBackground(backgroundColors.tertiary)
+                                    .liquidRowBackground(fallback: backgroundColors.tertiary)
                                     .frame(maxWidth: .infinity)
                                 
                                 Button {
@@ -53,7 +53,7 @@ public struct NotificationsScreen: View {
                         Text("General", bundle: .module)
                     }
                     .tint(tintColor)
-                    .listRowBackground(backgroundColors.tertiary)
+                    .liquidRowBackground(fallback: backgroundColors.tertiary)
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     
                     Section {
@@ -62,7 +62,7 @@ public struct NotificationsScreen: View {
                         Text("Advanced", bundle: .module)
                     }
                     .tint(tintColor)
-                    .listRowBackground(backgroundColors.tertiary)
+                    .liquidRowBackground(fallback: backgroundColors.tertiary)
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 }
 //                .animation(.default, value: store.appSettings.backgroundNotifications2)

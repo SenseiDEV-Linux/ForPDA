@@ -48,10 +48,13 @@ struct WarningLogView: View {
                     .foregroundStyle(Color(.Labels.teritary))
                     .padding(.vertical, 4)
                     .padding(.horizontal, 6)
-                    .background(
-                        backgroundColors.tertiary
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    )
+                    .background {
+                        if !isLiquidGlass {
+                            backgroundColors.tertiary
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                    .liquidGlass(.regular, cornerRadius: 10)
             }
 
             if let reason = warningLog.reasonAttributed {

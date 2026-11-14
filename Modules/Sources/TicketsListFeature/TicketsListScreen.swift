@@ -307,7 +307,7 @@ public struct TicketsListScreen: View {
     @ViewBuilder
     private func Navigation() -> some View {
         PageNavigation(store: store.scope(\.pageNavigation, action: \.pageNavigation))
-            .listRowBackground(backgroundColors.primary)
+            .liquidRowBackground(fallback: backgroundColors.primary)
     }
     
     // MARK: - Nothing Found

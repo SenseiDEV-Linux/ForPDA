@@ -83,7 +83,7 @@ public struct ReputationScreen: View {
                 List(store.historyData, id: \.self) { vote in
                     WithPerceptionTracking {
                         ReputationRow(vote: vote)
-                            .listRowBackground(backgroundColors.primary)
+                            .liquidRowBackground(fallback: backgroundColors.primary)
                             .onAppear {
                                 if let index = store.historyData.firstIndex(of: vote),
                                    index == store.historyData.count - 5 {
@@ -205,7 +205,11 @@ public struct ReputationScreen: View {
         .padding(.leading, 12)
         .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .contentShape(Rectangle())
-        .background(backgroundColors.primary)
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.primary
+            }
+        }
         .contextMenu {
             if store.isUserAuthorized {
                 MenuButtons(vote: vote)

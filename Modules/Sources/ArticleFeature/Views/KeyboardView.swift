@@ -74,14 +74,15 @@ struct KeyboardView: View {
             onScrollDownTapped()
         } label: {
             Circle()
-                .fill(backgroundColors.primary)
+                .fill(isLiquidGlass ? Color.clear : backgroundColors.primary)
                 .frame(width: 44, height: 44)
                 .overlay {
                     Image(systemSymbol: .arrowDown)
                         .tint(tintColor)
                 }
         }
-        .shadow(color: .black.opacity(0.1), radius: 2)
+        .liquidGlassCircle()
+        .shadow(color: .black.opacity(isLiquidGlass ? 0.2 : 0.1), radius: 2)
         .padding(.trailing, 8)
     }
     
@@ -145,8 +146,13 @@ struct KeyboardView: View {
         .focused($focus, equals: ArticleFeature.State.Field.comment)
         .padding(.horizontal, 8)
         .padding(.vertical, 7)
-        .background(backgroundColors.tertiary)
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 18))
+        .liquidGlass(.regular, cornerRadius: 18)
         .overlay {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(Color(.Separator.secondary), lineWidth: 0.33)

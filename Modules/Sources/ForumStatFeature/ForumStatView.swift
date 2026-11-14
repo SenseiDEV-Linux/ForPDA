@@ -247,10 +247,13 @@ public struct ForumStatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(12)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 10)
     }
     
     // MARK: - User Brick Button
@@ -276,10 +279,13 @@ public struct ForumStatView: View {
         .buttonStyle(.plain)
         .padding(.vertical, 9)
         .padding(.horizontal, 8)
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 8)
     }
     
     // MARK: - Toolbar

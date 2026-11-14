@@ -244,10 +244,13 @@ public struct ProfileScreen: View {
                     }
                     .padding(.vertical, 8)
                     .padding(.horizontal, 10)
-                    .background(
-                        backgroundColors.tertiary
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    )
+                    .background {
+                        if !isLiquidGlass {
+                            backgroundColors.tertiary
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
+                    .liquidGlass(.regular, cornerRadius: 12)
                 }
             }
         }
@@ -341,10 +344,13 @@ public struct ProfileScreen: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(12)
-                    .background(
-                        backgroundColors.tertiary
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    )
+                    .background {
+                        if !isLiquidGlass {
+                            backgroundColors.tertiary
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                    .liquidGlass(.regular, cornerRadius: 10)
                     
                     if let status = user.statusAttributed {
                         VStack(spacing: 2) {
@@ -361,10 +367,13 @@ public struct ProfileScreen: View {
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(12)
-                        .background(
-                            backgroundColors.tertiary
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        )
+                        .background {
+                            if !isLiquidGlass {
+                                backgroundColors.tertiary
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                        }
+                        .liquidGlass(.regular, cornerRadius: 10)
                     }
                 }
                 
@@ -424,7 +433,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Restrictions")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -453,7 +462,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Personal info")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -471,7 +480,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "About me")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -488,7 +497,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Devices List")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -511,7 +520,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Site statistics")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -532,7 +541,7 @@ public struct ProfileScreen: View {
         } header: {
             SectionHeader(title: "Forum statistics")
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -598,10 +607,13 @@ public struct ProfileScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
-                .background(
-                    backgroundColors.tertiary
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                )
+                .background {
+                    if !isLiquidGlass {
+                        backgroundColors.tertiary
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                .liquidGlass(.regular, cornerRadius: 10)
             }
         }
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -619,7 +631,7 @@ public struct ProfileScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .liquidRowBackground(fallback: backgroundColors.tertiary)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
     
@@ -828,10 +840,13 @@ public struct ProfileScreen: View {
                 .padding(12)
             }
         }
-        .background(
-            backgroundColors.tertiary
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-        )
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+        .liquidGlass(.regular, cornerRadius: 10)
     }
     
     // MARK: - Attributed Content

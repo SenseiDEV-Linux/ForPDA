@@ -313,13 +313,18 @@ struct ToastView: View {
                             .transition(.opacity.combined(with: .move(edge: .trailing)))
                     }
                 }
-                .background(backgroundColors.primary)
+                .background {
+                    if !isLiquidGlass {
+                        backgroundColors.primary
+                    }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .overlay {
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color(.Separator.secondary), lineWidth: 0.33)
                 }
-                .shadow(color: Color.black.opacity(0.04), radius: 10, y: 4)
+                .liquidGlass(.regular, cornerRadius: 16)
+                .shadow(color: Color.black.opacity(isLiquidGlass ? 0.12 : 0.04), radius: 10, y: 4)
                 .padding(.bottom, 50 + 16)
                 .padding(.horizontal, 16)
                 .opacity(isExpanded ? 1 : 0)

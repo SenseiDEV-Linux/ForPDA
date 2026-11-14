@@ -407,8 +407,13 @@ public struct UserPunishmentScreen: View {
                 .padding(.trailing, 11)
         }
         .frame(minHeight: 60)
-        .background(backgroundColors.tertiary)
+        .background {
+            if !isLiquidGlass {
+                backgroundColors.tertiary
+            }
+        }
         .cornerRadius(isLiquidGlass ? 28 : 14)
+        .liquidGlass(.regular, cornerRadius: isLiquidGlass ? 28 : 14)
     }
 }
 
