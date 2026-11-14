@@ -372,8 +372,6 @@ struct SpoilerView: View {
 
 struct QuoteView: View {
     
-    @Environment(\.backgroundColors) private var backgroundColors
-    
     let types: [UITopicType]
     let nestLevel: Int
     let info: QuoteType?
@@ -485,10 +483,14 @@ struct QuoteView: View {
             }
             .padding(12)
         }
-        .background(
+        .background {
             RoundedRectangle(cornerRadius: 12)
-                .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
-        )
+                .fill(.regularMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color(.Separator.secondary), lineWidth: 1)
+                }
+        }
     }
 }
 
