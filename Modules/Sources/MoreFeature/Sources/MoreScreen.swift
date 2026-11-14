@@ -75,7 +75,7 @@ public struct MoreScreen: View {
         Section {
             ProfileButton()
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Log In or Profile Button
@@ -212,7 +212,7 @@ public struct MoreScreen: View {
                  }
              }
          }
-         .listRowBackground(backgroundColors.tertiary)
+         .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
      }
     
     // MARK: - Settings Section
@@ -224,7 +224,7 @@ public struct MoreScreen: View {
                 send(.settingsButtonTapped)
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Links Section
@@ -248,7 +248,7 @@ public struct MoreScreen: View {
                 send(.githubButtonTapped)
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Logout Section
@@ -262,7 +262,7 @@ public struct MoreScreen: View {
                 }
             }
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(MoreGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Row
@@ -310,6 +310,21 @@ public struct MoreScreen: View {
         }
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
         .frame(minHeight: 60)
+    }
+}
+
+// Keep native grouped-list behaviour, with the existing surface on older iOS.
+private struct MoreGlassSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
     }
 }
 
