@@ -265,8 +265,6 @@ public struct TopicView: View {
 
 struct SpoilerView: View {
     
-    @Environment(\.backgroundColors) private var backgroundColors
-    
     @State private var isExpanded = false
     
     let types: [UITopicType]
@@ -358,10 +356,14 @@ struct SpoilerView: View {
                 .padding(12)
             }
         }
-        .background(
+        .background {
             RoundedRectangle(cornerRadius: 12)
-                .fill(backgroundColors.primary, strokeBorder: Color(.Separator.secondary))
-        )
+                .fill(.regularMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color(.Separator.secondary), lineWidth: 1)
+                }
+        }
         .animation(.default, value: isExpanded)
     }
 }
