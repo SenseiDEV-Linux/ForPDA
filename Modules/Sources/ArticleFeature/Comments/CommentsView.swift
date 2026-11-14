@@ -136,7 +136,7 @@ struct CommentView: View {
             ) { store in
                 ReputationChangeView(store: store)
             }
-            .background(backgroundColors.primary)
+            .background(isLiquidGlass ? Color.clear : backgroundColors.primary)
             .alert($store.scope(\.$alert, action: \.alert))
             .task {
                 await store.send(.onTask).finish()

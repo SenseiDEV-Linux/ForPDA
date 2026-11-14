@@ -67,7 +67,18 @@ public struct ArticleScreen: View {
                     }
                 }
                 .overlay { RefreshIndicator() }
-                .background(backgroundColors.primary)
+                .background {
+                    ZStack {
+                        backgroundColors.primary
+                        if isLiquidGlass {
+                            ArticleReadingBackdrop(
+                                imageURL: store.articlePreview.imageUrl,
+                                baseColor: backgroundColors.primary
+                            )
+                        }
+                    }
+                    .ignoresSafeArea()
+                }
                 .onAppear { store.send(.onAppear) }
                 .onChange(of: store.scrollToId) { _ in
                     guard let scrollId = store.scrollToId, !store.isLoading else { return }
@@ -168,7 +179,7 @@ public struct ArticleScreen: View {
                             
                         } else if let elements = store.elements {
                             ArticleView(elements: elements)
-                                .background(backgroundColors.primary)
+                                .background(isLiquidGlass ? Color.clear : backgroundColors.primary)
                         }
                     }
                     .animation(.default, value: store.elements)
@@ -563,4 +574,31 @@ extension View {
         )
     }
     .environment(\.tintColor, Color(.Theme.scarlet))
+}
+
+// The cover is softened and tinted so article and comment text remains readable.
+private struct ArticleReadingBackdrop: View {
+    let imageURL: URL
+    let baseColor: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            LazyImage(url: imageURL) { state in
+                if let image = state.image {
+                    image.resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .blur(radius: 45, opaque: true)
+                        .overlay(baseColor.opacity(0.88))
+                } else {
+                    baseColor
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }

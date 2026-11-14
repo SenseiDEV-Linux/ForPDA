@@ -85,6 +85,10 @@ public struct TopicScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    TopicReadingBackdrop(tint: tintColor)
+                }
                 
                 ScrollViewReader { proxy in
                     WithPerceptionTracking {
@@ -812,4 +816,30 @@ private extension TopicPostsFilter {
         }
     )
     .tint(Color(.Theme.primary))
+}
+
+// A subdued blurred backdrop keeps forum posts readable in light and dark themes.
+private struct TopicReadingBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.18))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.12))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }
