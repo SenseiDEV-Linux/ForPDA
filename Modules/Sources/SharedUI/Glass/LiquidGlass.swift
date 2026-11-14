@@ -135,7 +135,7 @@ public struct LiquidGlassServiceModifier<S: InsettableShape>: ViewModifier {
 
 // MARK: - Glass Union (merging surfaces)
 
-public struct LiquidGlassUnionModifier<ID: Hashable>: ViewModifier {
+public struct LiquidGlassUnionModifier<ID: Hashable & Sendable>: ViewModifier {
     
     let id: ID
     let namespace: Namespace.ID
@@ -270,7 +270,7 @@ public extension View {
     /// Merges this glass surface with the one having the same `id` inside
     /// the given namespace (shapes flow into each other when close).
     @ViewBuilder
-    func liquidGlassUnion<ID: Hashable>(
+    func liquidGlassUnion<ID: Hashable & Sendable>(
         id: ID,
         in namespace: Namespace.ID,
         isEnabled: Bool = true
