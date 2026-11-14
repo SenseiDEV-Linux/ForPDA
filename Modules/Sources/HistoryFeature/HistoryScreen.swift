@@ -44,6 +44,10 @@ public struct HistoryScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    HistoryBlurredBackdrop(tint: tintColor)
+                }
                 
                 List {
                     if !store.history.isEmpty, !store.isLoading {
@@ -95,7 +99,7 @@ public struct HistoryScreen: View {
     private func Navigation() -> some View {
         if shouldShowInlineNavigation {
             PageNavigation(store: store.scope(\.pageNavigation, action: \.pageNavigation))
-                .listRowBackground(backgroundColors.primary)
+                .listRowBackground(isLiquidGlass ? Color.clear : backgroundColors.primary)
         }
     }
     
@@ -118,7 +122,7 @@ public struct HistoryScreen: View {
         } header: {
             Header(title: history.seenDate.formattedDateOnly())
         }
-        .listRowBackground(backgroundColors.tertiary)
+        .listRowBackground(HistoryGlassSurface(fallback: backgroundColors.tertiary))
     }
     
     // MARK: - Empty History
@@ -196,5 +200,45 @@ extension Bundle {
                 HistoryFeature()
             }
         )
+    }
+}
+
+// Keep the native grouped list and the original appearance on earlier iOS.
+private struct HistoryGlassSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
+    }
+}
+
+private struct HistoryBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
