@@ -44,6 +44,10 @@ public struct MentionsScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    MentionsBlurredBackdrop(tint: tintColor)
+                }
                 
                 if !store.mentions.isEmpty, !store.isLoading {
                     List {
@@ -61,7 +65,7 @@ public struct MentionsScreen: View {
                                 }
                             )
                         }
-                        .listRowBackground(backgroundColors.tertiary)
+                        .listRowBackground(MentionsGlassSurface(fallback: backgroundColors.tertiary))
                         
                         Navigation()
                     }
@@ -102,7 +106,7 @@ public struct MentionsScreen: View {
     private func Navigation() -> some View {
         if shouldShowInlineNavigation {
             PageNavigation(store: store.scope(\.pageNavigation, action: \.pageNavigation))
-                .listRowBackground(backgroundColors.primary)
+                .listRowBackground(isLiquidGlass ? Color.clear : backgroundColors.primary)
         }
     }
     
@@ -173,5 +177,45 @@ private extension Date {
                 MentionsFeature()
             }
         )
+    }
+}
+
+// Preserve list grouping and the existing surface on earlier iOS versions.
+private struct MentionsGlassSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            fallback
+        }
+    }
+}
+
+private struct MentionsBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
