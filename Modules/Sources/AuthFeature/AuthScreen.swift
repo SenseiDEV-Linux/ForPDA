@@ -40,6 +40,10 @@ public struct AuthScreen: View {
             ZStack {
                 backgroundColors.primary
                     .ignoresSafeArea()
+
+                if isLiquidGlass {
+                    AuthBlurredBackdrop(tint: tintColor)
+                }
                 
                 ScrollView {
                     VStack(spacing: 0) {
@@ -142,7 +146,7 @@ public struct AuthScreen: View {
                             .font(.body)
                             .frame(maxWidth: .infinity, maxHeight: 48)
                     }
-                    .buttonStyle(.borderedProminent)
+                    ._glassProminentButtonStyle()
                     .frame(maxHeight: 48)
                     .disabled(store.isLoginButtonDisabled)
                     .padding(.horizontal, 16)
@@ -239,14 +243,13 @@ public struct AuthScreen: View {
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(backgroundColors.tertiary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
+            .background {
+                AuthFieldSurface(fallback: backgroundColors.tertiary)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: isLiquidGlass ? 22 : 14)
                     .stroke($focus.wrappedValue == focusEqual ? tintColor : Color(.Separator.primary), lineWidth: 0.67)
-            )
+            }
             
             if let errorMessage, showError {
                 Text(errorMessage, bundle: .module)
@@ -322,4 +325,44 @@ public struct AuthScreen: View {
         )
     }
     .environment(\.tintColor, Color(.Theme.primary))
+}
+
+// Preserve the existing field surface on iOS versions without Liquid Glass.
+private struct AuthFieldSurface: View {
+    let fallback: Color
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            RoundedRectangle(cornerRadius: 22)
+                .fill(.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: 22))
+        } else {
+            RoundedRectangle(cornerRadius: 14).fill(fallback)
+        }
+    }
+}
+
+private struct AuthBlurredBackdrop: View {
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.24))
+                    .frame(width: geometry.size.width * 0.9)
+                    .offset(x: -geometry.size.width * 0.38, y: -geometry.size.height * 0.3)
+                Circle()
+                    .fill(Color.blue.opacity(0.16))
+                    .frame(width: geometry.size.width * 0.85)
+                    .offset(x: geometry.size.width * 0.4, y: geometry.size.height * 0.2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .blur(radius: 80)
+            .clipped()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }
