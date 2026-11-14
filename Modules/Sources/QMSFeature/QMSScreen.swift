@@ -145,7 +145,7 @@ public struct QMSScreen: View {
         ChatTheme(
             colors: ChatTheme.Colors(
                 mainBG: backgroundColors.primary,
-                messageMyBG: Color(.Background.quaternary),
+                messageMyBG: tintColor.opacity(isLiquidGlass ? 0.20 : 0.16),
                 messageMyText: Color(.Labels.primary),
                 messageMyTimeText: Color(.systemGray),
                 messageFriendBG: Color(.Background.quaternary),
@@ -221,7 +221,10 @@ public struct QMSScreen: View {
                         .font(.title3.weight(.medium))
                         .foregroundStyle(tintColor)
                         .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
+                        .contentShape(Circle())
+                        .background {
+                            QMSComposerGlass(shape: Circle())
+                        }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("qms.attachments.add", bundle: .module))
@@ -269,12 +272,34 @@ public struct QMSScreen: View {
                 .accessibilityLabel(Text("qms.message.send", bundle: .module))
             }
         }
-        .padding()
+        .padding(12)
+        .background {
+            QMSComposerGlass(shape: RoundedRectangle(cornerRadius: 30))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .animation(.default, value: store.isSending)
         .animation(.default, value: store.canSendMessage)
         .animation(.default, value: text.wrappedValue)
         .bind($focusedInput, to: $store.focus)
         .bind(text, to: $store.draftText)
+    }
+}
+
+// Liquid Glass on iOS 26, with a translucent material on earlier systems.
+private struct QMSComposerGlass<GlassShape: Shape>: View {
+    let shape: GlassShape
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            shape
+                .fill(.clear)
+                .glassEffect(.regular, in: shape)
+        } else {
+            shape
+                .fill(.thinMaterial)
+                .overlay { shape.stroke(Color.primary.opacity(0.08), lineWidth: 1) }
+        }
     }
 }
 
