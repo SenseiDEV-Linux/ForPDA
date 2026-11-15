@@ -112,9 +112,9 @@ public struct ForumMergeView: View {
     // MARK: - Topic Row
     
     private func TopicRow(_ allCount: Int, _ index: Int, _ topic: TopicInfo) -> some View {
-        WithPerceptionTracking {
+        let radius: CGFloat = isLiquidGlass ? 24 : 10
+        return WithPerceptionTracking {
             VStack(spacing: 0) {
-                let radius: CGFloat = isLiquidGlass ? 24 : 10
                 SharedUI.TopicRow(
                     title: .plain(topic.name),
                     date: topic.lastPost.date,
